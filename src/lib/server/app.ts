@@ -1,8 +1,11 @@
 import { AccountService } from './accounts/service';
 import { SessionService } from './accounts/sessions';
-import { loadIssuerKeys, loadSemesterKey, type IssuerKeys } from './crypto/keys';
+import { ensureHandleKey, loadHandleKey, loadIssuerKeys, loadSemesterKey, type IssuerKeys } from './crypto/keys';
 import { semesterId } from './crypto/semester';
 import { createSql, type Sql } from './db';
+import { FeedService } from './forum/feed';
+import { PostService } from './forum/posts';
+import { ReactionService } from './forum/reactions';
 import { DevConsoleMailer, SmtpMailer, type Mailer } from './mail/mailer';
 import { IpKeyer, RateLimiter } from './ratelimit';
 import { PendingStore } from './verify/pending';
@@ -14,8 +17,18 @@ export interface App {
 	verify: VerifyService;
 	accounts: AccountService;
 	sessions: SessionService;
+	posts: PostService;
+	reactions: ReactionService;
+	feed: FeedService;
 	ipKeyer: IpKeyer;
-	limits: { verifyStart: RateLimiter; verifyOtp: RateLimiter; signIn: RateLimiter };
+	limits: {
+		verifyStart: RateLimiter;
+		verifyOtp: RateLimiter;
+		signIn: RateLimiter;
+		post: RateLimiter;
+		reply: RateLimiter;
+		react: RateLimiter;
+	};
 }
 
 function required(name: string): string {
@@ -35,11 +48,16 @@ async function build(): Promise<App> {
 	const keyId = process.env.ISSUER_KEY_ID ?? semesterId();
 	const sql = createSql(required('DATABASE_URL'));
 	const keys = await loadIssuerKeys(dir, keyId);
+	await ensureHandleKey(dir);
+	const handleKey = await loadHandleKey(dir);
 	const pending = new PendingStore<PendingVerification>(10 * 60_000);
 	const limits = {
 		verifyStart: new RateLimiter(5, 60 * 60_000), // 5 codes per hour per network
 		verifyOtp: new RateLimiter(30, 60 * 60_000),
-		signIn: new RateLimiter(20, 60 * 60_000)
+		signIn: new RateLimiter(20, 60 * 60_000),
+		post: new RateLimiter(5, 60 * 60_000),
+		reply: new RateLimiter(30, 60 * 60_000),
+		react: new RateLimiter(300, 60 * 60_000)
 	};
 
 	const minute = setInterval(() => {
@@ -58,6 +76,9 @@ async function build(): Promise<App> {
 		verify: new VerifyService({ sql, keys, semesterKey: await loadSemesterKey(dir, keyId), mailer: mailer(), pending }),
 		accounts: new AccountService({ sql, keys }),
 		sessions,
+		posts: new PostService({ sql, handleKey }),
+		reactions: new ReactionService(sql),
+		feed: new FeedService({ sql, handleKey }),
 		ipKeyer: new IpKeyer(),
 		limits
 	};

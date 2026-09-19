@@ -117,6 +117,15 @@ Tor ─────onion───▶ tor ─────────────
 | `POST /api/account` | Ticket + recovery key → account and session |
 | `POST /api/account/renew` | Fresh ticket → extends your account |
 | `POST` / `DELETE /api/session` | Sign in with a recovery key / sign out |
+| `GET /api/categories` | Categories |
+| `GET /api/feed?tab=&sort=&category=&page=` | Feed. Tabs: `all`, `conversations`, `grievances`, `unanswered`. Sorts: `hot`, `new`, `affected` |
+| `GET /api/feed/most-affected` | Most affected grievances this week |
+| `POST /api/posts` | New post (`category`, `kind`, `title`, `body`) |
+| `GET` / `DELETE /api/posts/:id` | Thread with replies / delete your own post |
+| `POST /api/posts/:id/replies` | Reply (`body`, optional `parentId`) |
+| `POST /api/posts/:id/metoo` | Toggle "affects me too" |
+| `POST /api/vote` | Toggle an upvote (`targetType`, `targetId`) |
+| `DELETE /api/replies/:id` | Delete your own reply |
 
 ## Support and wellbeing
 
@@ -158,7 +167,7 @@ migrations/              SQL
 scripts/                 migrate, keygen, retire-semester-key
 src/lib/client/          browser side of blind signatures
 src/lib/shared/          recovery keys
-src/lib/server/          crypto, verification, accounts, mail, rate limiting
+src/lib/server/          crypto, verification, accounts, forum, mail, rate limiting
 src/routes/api/          HTTP endpoints
 tests/                   unit and integration tests, including anonymity checks
 ```

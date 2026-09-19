@@ -19,7 +19,8 @@ async function columns() {
 describe('anonymity invariants', () => {
 	it('creates the identity tables', async () => {
 		const tables = new Set((await columns()).map((c) => c.table_name));
-		for (const t of ['accounts', 'sessions', 'issuances', 'spent_tokens']) expect(tables).toContain(t);
+		for (const t of ['accounts', 'sessions', 'issuances', 'spent_tokens', 'categories', 'posts', 'replies', 'votes', 'metoos'])
+			expect(tables).toContain(t);
 	});
 
 	it('never pairs email-derived data with an account id', async () => {
@@ -43,5 +44,12 @@ describe('anonymity invariants', () => {
 		const banned = /(^ip$|^ip_|_ip$|ip_addr|user_agent|created_at|^email$)/;
 		const hits = (await columns()).filter((c) => banned.test(c.column_name));
 		expect(hits).toEqual([]);
+	});
+
+	it('seeds the seven categories in order', async () => {
+		const rows = await sql`select slug from categories order by sort_order`;
+		expect(rows.map((r) => r.slug)).toEqual([
+			'academics', 'hostel-mess', 'wellbeing', 'harassment', 'administration', 'placements', 'general'
+		]);
 	});
 });

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createToken, finalizeToken, importIssuerKey } from '../../src/lib/client/tokens';
 import { blindSign, verifyToken } from '../../src/lib/server/crypto/issuer';
 import {
-	createIssuerKeys, createSemesterKey, loadIssuerKeys, loadSemesterKey, retireSemesterKey, saveIssuerKeys
+	createIssuerKeys, createSemesterKey, ensureHandleKey, loadHandleKey, loadIssuerKeys, loadSemesterKey, retireSemesterKey, saveIssuerKeys
 } from '../../src/lib/server/crypto/keys';
 
 let dir: string;
@@ -44,5 +44,13 @@ describe('key files', () => {
 		expect((await loadSemesterKey(dir, '2026-autumn')).length).toBe(32);
 		await retireSemesterKey(dir, '2026-autumn');
 		await expect(loadSemesterKey(dir, '2026-autumn')).rejects.toThrow(/ENOENT/);
+	});
+
+	it('creates the handle key once and keeps it', async () => {
+		await ensureHandleKey(dir);
+		const first = await loadHandleKey(dir);
+		await ensureHandleKey(dir);
+		expect((await loadHandleKey(dir)).equals(first)).toBe(true);
+		expect(first.length).toBe(32);
 	});
 });

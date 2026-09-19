@@ -68,3 +68,19 @@ export async function retireSemesterKey(dir: string, keyId: string): Promise<voi
 	}
 	await unlink(path);
 }
+
+const handlePath = (dir: string) => join(dir, 'handle.key');
+
+/** The per-thread name key is permanent: changing it would rename everyone in every thread. */
+export async function ensureHandleKey(dir: string): Promise<void> {
+	await mkdir(dir, { recursive: true, mode: 0o700 });
+	try {
+		await writeFile(handlePath(dir), randomBytes(32), { mode: 0o600, flag: 'wx' });
+	} catch (e) {
+		if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+	}
+}
+
+export async function loadHandleKey(dir: string): Promise<Buffer> {
+	return readFile(handlePath(dir));
+}
