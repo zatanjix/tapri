@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { showsDistress } from '../../src/lib/server/forum/distress';
+import { showsDistress } from '../../src/lib/shared/distress';
 
 describe('showsDistress', () => {
 	it('flags clear expressions of distress', () => {

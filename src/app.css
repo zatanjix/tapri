@@ -1,0 +1,191 @@
+:root {
+	--bg: #ffffff;
+	--surface: #f6f6f3;
+	--ink: #1a1a1a;
+	--muted: #545454;
+	--border: #e6e4df;
+	--band: #f2c14e;
+	--band-ink: #1a1a1a;
+	--count: #b3261e;
+	--well: #eef5f1;
+	--well-ink: #1d4a37;
+	--well-line: #cfe3d8;
+	--urgent: #fbeae8;
+	--urgent-ink: #8a1c14;
+	--warn: #fdf3dc;
+	--warn-ink: #6b4a07;
+	--btn: #1a1a1a;
+	--btn-ink: #ffffff;
+	--disabled: #c9c7c1;
+
+	--font: 'Plus Jakarta Sans', system-ui, sans-serif;
+	--mono: 'JetBrains Mono', ui-monospace, monospace;
+	--gutter: 16px;
+	--max: 1080px;
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #171717;
+		--surface: #202020;
+		--ink: #f1efea;
+		--muted: #b3b0a9;
+		--border: #2f2f2f;
+		--band: #e5b43e;
+		--count: #ff8b7b;
+		--well: #1c2a24;
+		--well-ink: #cfe6da;
+		--well-line: #2c4238;
+		--urgent: #3a1a17;
+		--urgent-ink: #ffc9c2;
+		--warn: #33290f;
+		--warn-ink: #f3d58c;
+		--btn: #f1efea;
+		--btn-ink: #171717;
+		--disabled: #4a4945;
+		color-scheme: dark;
+	}
+}
+
+@media (min-width: 768px) {
+	:root {
+		--gutter: 28px;
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--font);
+	font-size: 15px;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+	/* Plus Jakarta Sans turns '0x0' into '0×0' by default, which mangles roll-number emails. */
+	font-feature-settings: 'calt' 0;
+}
+
+a {
+	color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+	font: inherit;
+	color: inherit;
+}
+
+button {
+	cursor: pointer;
+}
+
+:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+.mono {
+	font-family: var(--mono);
+}
+
+.wrap {
+	max-width: var(--max);
+	margin: 0 auto;
+	padding: 0 var(--gutter);
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border: 0;
+	border-radius: 8px;
+	padding: 10px 16px;
+	background: var(--btn);
+	color: var(--btn-ink);
+	font-weight: 700;
+	font-size: 14px;
+	text-decoration: none;
+	transition: opacity 120ms;
+}
+.btn:hover {
+	opacity: 0.88;
+}
+.btn:disabled {
+	background: var(--disabled);
+	cursor: not-allowed;
+	opacity: 1;
+}
+.btn.block {
+	display: flex;
+	width: 100%;
+	padding: 13px;
+}
+.btn.ghost {
+	background: transparent;
+	color: var(--ink);
+	border: 1px solid var(--border);
+}
+
+.field {
+	width: 100%;
+	border: 1.5px solid var(--border);
+	background: var(--bg);
+	border-radius: 10px;
+	padding: 12px 13px;
+	font-size: 15px;
+	transition: border-color 120ms;
+}
+.field:focus {
+	outline: none;
+	border-color: var(--ink);
+}
+
+.label {
+	display: block;
+	font-size: 12.5px;
+	font-weight: 700;
+	margin: 0 0 7px;
+}
+
+.muted {
+	color: var(--muted);
+}
+
+.error {
+	color: var(--count);
+	font-size: 13.5px;
+	font-weight: 600;
+	margin: 8px 0 0;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+		animation: none !important;
+	}
+}

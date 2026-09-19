@@ -1,0 +1,13 @@
+{
+	"name": "tapri",
+	"short_name": "tapri",
+	"description": "An anonymous forum for the IIT Bombay community.",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"background_color": "#ffffff",
+	"theme_color": "#f2c14e",
+	"icons": [
+		{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+	]
+}

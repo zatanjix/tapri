@@ -26,3 +26,4 @@ vite.config.ts.timestamp-*
 keys/
 .superpowers/
 *.log
+.claude/

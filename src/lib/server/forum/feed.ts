@@ -1,5 +1,5 @@
 import type { Sql } from '../db';
-import { showsDistress } from './distress';
+import { showsDistress } from '../../shared/distress';
 import { baseHandle } from './handles';
 import { LIMITS, type FeedItem } from './types';
 

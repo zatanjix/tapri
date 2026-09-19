@@ -1,5 +1,5 @@
 import type { Sql } from '../db';
-import { showsDistress } from './distress';
+import { showsDistress } from '../../shared/distress';
 import { ThreadHandles } from './handles';
 import { LIMITS, type Kind, type PostView, type ReplyView, type Result, type Status, type ThreadView } from './types';
 

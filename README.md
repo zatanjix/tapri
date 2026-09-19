@@ -151,7 +151,7 @@ npm test
 npm run dev
 ```
 
-In development, codes are printed to the terminal (email addresses never are). Production requires `MAILER=smtp`.
+In development, codes are printed to the terminal (email addresses never are). Production requires `MAILER=smtp`, and `SOURCE_URL` should point to the public repository so every page links to its source.
 
 At the start of each semester:
 
@@ -165,9 +165,11 @@ npm run retire-key -- 2026-autumn
 ```
 migrations/              SQL
 scripts/                 migrate, keygen, retire-semester-key
-src/lib/client/          browser side of blind signatures
-src/lib/shared/          recovery keys
-src/lib/server/          crypto, verification, accounts, forum, mail, rate limiting
+src/lib/client/          browser side of blind signatures, signup storage, API client
+src/lib/shared/          recovery keys, support contacts, distress detection, time
+src/lib/server/          crypto, verification, accounts, forum, mail, rate limiting, headers
+src/lib/components/      interface components
+src/routes/              pages: welcome, join, sign in, feeds, threads, composer, help
 src/routes/api/          HTTP endpoints
 tests/                   unit and integration tests, including anonymity checks
 ```
