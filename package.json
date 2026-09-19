@@ -1,0 +1,41 @@
+{
+	"name": "tapri",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "node --env-file-if-exists=.env node_modules/vite/bin/vite.js dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test": "vitest run",
+		"db:up": "docker compose up -d db",
+		"migrate": "node --env-file=.env --import tsx scripts/migrate.ts",
+		"keygen": "node --env-file=.env --import tsx scripts/keygen.ts",
+		"retire-key": "node --env-file=.env --import tsx scripts/retire-semester-key.ts"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-node": "^5.5.7",
+		"@sveltejs/kit": "^2.63.0",
+		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@types/node": "^26.6.2",
+		"@types/nodemailer": "^8.0.2",
+		"svelte": "^5.56.1",
+		"svelte-check": "^4.6.0",
+		"tsx": "^4.23.13",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.16",
+		"vitest": "^5.0.1"
+	},
+	"dependencies": {
+		"@cloudflare/blindrsa-ts": "^0.4.4",
+		"nodemailer": "^10.0.10",
+		"postgres": "^3.4.9"
+	},
+	"engines": {
+		"node": ">=22.12 <23 || >=24"
+	},
+	"license": "AGPL-3.0-or-later"
+}

@@ -1,0 +1,12 @@
+name: tapri
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: tapri
+      POSTGRES_PASSWORD: tapri
+      POSTGRES_DB: tapri_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
