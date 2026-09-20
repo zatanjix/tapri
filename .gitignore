@@ -27,3 +27,6 @@ keys/
 .superpowers/
 *.log
 .claude/
+.vercel/
+.env.local
+.env*
