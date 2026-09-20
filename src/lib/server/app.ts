@@ -77,7 +77,14 @@ async function build(): Promise<App> {
 	return {
 		sql,
 		keys,
-		verify: new VerifyService({ sql, keys, semesterKey, mailer: mailer() }),
+		verify: new VerifyService({
+			sql,
+			keys,
+			semesterKey,
+			mailer: mailer(),
+			// Only honoured while the site is locked behind a passphrase.
+			testEmail: env('ACCESS_PASSPHRASE') ? env('TEST_EMAIL') : undefined
+		}),
 		accounts: new AccountService({ sql, keys }),
 		sessions: new SessionService(sql),
 		posts: new PostService({ sql, handleKey }),

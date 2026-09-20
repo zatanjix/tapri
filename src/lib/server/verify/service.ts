@@ -21,6 +21,8 @@ export interface VerifyDeps {
 	keys: IssuerKeys;
 	semesterKey: Buffer;
 	mailer: Mailer;
+	/** One extra address allowed to sign up, for testing before launch. Ignored once the site is open. */
+	testEmail?: string;
 }
 
 /**
@@ -35,7 +37,7 @@ export class VerifyService {
 		const { keys, sql, mailer } = this.deps;
 		if (keyId !== keys.keyId) return { ok: false, error: 'wrong_key' };
 		if (blindedMsg.length !== keys.modulusBytes) return { ok: false, error: 'invalid_token' };
-		const email = normalizeEmail(rawEmail);
+		const email = normalizeEmail(rawEmail) ?? this.testAddress(rawEmail);
 		if (!email) return { ok: false, error: 'invalid_email' };
 		const emailHmac = this.hash(email);
 
@@ -87,6 +89,12 @@ export class VerifyService {
 		if (inserted.length === 0) return { ok: false, error: 'already_claimed' };
 
 		return { ok: true, blindSig: await blindSign(keys, new Uint8Array(row.blinded_msg)) };
+	}
+
+	private testAddress(raw: string): string | null {
+		const test = this.deps.testEmail?.trim().toLowerCase();
+		const given = raw.trim().toLowerCase();
+		return test && given === test ? given : null;
 	}
 
 	private hash(value: string): Buffer {

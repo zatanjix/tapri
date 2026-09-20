@@ -95,3 +95,18 @@ describe('VerifyService', () => {
 		expect(rows).toHaveLength(1);
 	});
 });
+
+describe('VerifyService test address', () => {
+	it('accepts one configured address while the site is locked, and nothing else', async () => {
+		const testing = new VerifyService({
+			sql,
+			keys: await testKeys(),
+			semesterKey: randomBytes(32),
+			mailer,
+			testEmail: 'tapri-dev@proton.me'
+		});
+		expect((await testing.start('Tapri-Dev@Proton.me ', await blinded(), '2026-autumn')).ok).toBe(true);
+		expect(await testing.start('someone@gmail.com', await blinded(), '2026-autumn')).toEqual({ ok: false, error: 'invalid_email' });
+		expect((await testing.start(EMAIL, await blinded(), '2026-autumn')).ok).toBe(true);
+	});
+});
