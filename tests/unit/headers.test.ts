@@ -4,7 +4,7 @@ import { withSecurityHeaders } from '../../src/lib/server/headers';
 describe('security headers', () => {
 	it('sets privacy and hardening headers', () => {
 		const res = withSecurityHeaders(new Response('ok'));
-		expect(res.headers.get('referrer-policy')).toBe('no-referrer');
+		expect(res.headers.get('referrer-policy')).toBe('same-origin');
 		expect(res.headers.get('x-content-type-options')).toBe('nosniff');
 		expect(res.headers.get('x-robots-tag')).toBe('noindex, nofollow');
 		expect(res.headers.get('x-frame-options')).toBe('DENY');

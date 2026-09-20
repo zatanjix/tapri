@@ -1,5 +1,7 @@
 const HEADERS: Record<string, string> = {
-	'referrer-policy': 'no-referrer',
+	// Nothing is sent to other sites. Same-origin is kept because browsers blank the Origin
+	// header of form posts under 'no-referrer', which breaks CSRF protection.
+	'referrer-policy': 'same-origin',
 	'x-content-type-options': 'nosniff',
 	'x-robots-tag': 'noindex, nofollow',
 	'x-frame-options': 'DENY',
