@@ -5,6 +5,7 @@
 	import HelpNote from '$lib/components/HelpNote.svelte';
 	import Reply from '$lib/components/Reply.svelte';
 	import ReplyBox from '$lib/components/ReplyBox.svelte';
+	import ReportButton from '$lib/components/ReportButton.svelte';
 	import SupportBox from '$lib/components/SupportBox.svelte';
 	import { timeAgo } from '$lib/shared/time';
 
@@ -69,7 +70,7 @@
 			</button>
 			<button class="sec" class:on={vote.active} aria-pressed={vote.active} onclick={toggleVote}>▲ {vote.count}</button>
 			<button class="sec" onclick={copyLink}>{copied ? 'Copied' : 'Copy link'}</button>
-			{#if post.mine}<button class="ghost" onclick={remove}>Delete</button>{/if}
+			{#if post.mine}<button class="ghost" onclick={remove}>Delete</button>{:else}<ReportButton targetType="post" targetId={post.id} />{/if}
 		</div>
 
 		<div class="note">

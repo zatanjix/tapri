@@ -7,13 +7,19 @@ import { hmac, sha256 } from './crypto/encoding';
  */
 export const GATE_COOKIE = 'gate';
 
-export const gateToken = (passphrase: string): string => hmac(Buffer.from(passphrase), 'tapri-gate').toString('base64url');
+export const ADMIN_COOKIE = 'admin';
+
+export const gateToken = (passphrase: string, purpose = 'tapri-gate'): string =>
+	hmac(Buffer.from(passphrase), purpose).toString('base64url');
 
 export function passphraseMatches(expected: string, given: string): boolean {
 	return timingSafeEqual(sha256(expected), sha256(given));
 }
 
-export const isExempt = (path: string): boolean => path === '/gate';
+/** The gate never covers itself, nor the moderation view (which has its own passphrase). */
+export const isExempt = (path: string): boolean => path === '/gate' || path.startsWith('/admin');
+
+export const adminToken = (passphrase: string): string => gateToken(passphrase, 'tapri-admin');
 
 export function safeNext(next: string | null): string {
 	return next && next.startsWith('/') && !next.startsWith('//') ? next : '/';

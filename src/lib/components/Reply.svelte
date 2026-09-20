@@ -6,6 +6,7 @@
 	import HelpNote from './HelpNote.svelte';
 	import Reply from './Reply.svelte';
 	import ReplyBox from './ReplyBox.svelte';
+	import ReportButton from './ReportButton.svelte';
 
 	let {
 		reply,
@@ -49,7 +50,7 @@
 			<div class="acts">
 				<button class:on={voted} onclick={vote} aria-pressed={voted}>▲ {upvotes}</button>
 				{#if reply.parentId === null}<button onclick={() => (replying = !replying)}>Reply</button>{/if}
-				{#if reply.mine}<button onclick={remove}>Delete</button>{/if}
+				{#if reply.mine}<button onclick={remove}>Delete</button>{:else}<ReportButton targetType="reply" targetId={reply.id} />{/if}
 			</div>
 		{:else}
 			<p class="gone">{reply.status === 'deleted' ? 'Deleted by its author.' : 'Removed.'}</p>

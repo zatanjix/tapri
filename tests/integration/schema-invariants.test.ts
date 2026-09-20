@@ -19,7 +19,7 @@ async function columns() {
 describe('anonymity invariants', () => {
 	it('creates the identity tables', async () => {
 		const tables = new Set((await columns()).map((c) => c.table_name));
-		for (const t of ['accounts', 'sessions', 'issuances', 'spent_tokens', 'categories', 'posts', 'replies', 'votes', 'metoos'])
+		for (const t of ['accounts', 'sessions', 'issuances', 'spent_tokens', 'categories', 'posts', 'replies', 'votes', 'metoos', 'reports', 'verifications'])
 			expect(tables).toContain(t);
 	});
 

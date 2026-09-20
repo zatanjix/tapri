@@ -124,6 +124,7 @@ Browser ──HTTPS──▶ Vercel (SvelteKit on Node, TypeScript)
 | `POST /api/posts/:id/metoo` | Toggle "affects me too" |
 | `POST /api/vote` | Toggle an upvote (`targetType`, `targetId`) |
 | `DELETE /api/replies/:id` | Delete your own reply |
+| `POST /api/report` | Report a post or reply (`targetType`, `targetId`, `reason`, optional `note`) |
 
 ## Support and wellbeing
 
@@ -132,6 +133,7 @@ Browser ──HTTPS──▶ Vercel (SvelteKit on Node, TypeScript)
 - **Categories where support is the right answer carry a note:** counselling for Wellbeing and Placements, and complaint and anti-ragging channels for Harassment.
 - **Distress in any post or reply** brings up a gentle note with support options. It never blocks posting.
 - **Numbers are tap-to-call** and kept in a single, regularly checked file.
+- **Reporting is anonymous too:** a report records what was reported, never who reported it, outside the database.
 
 Contacts come from public institute circulars; listing them implies no affiliation.
 

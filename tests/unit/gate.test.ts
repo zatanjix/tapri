@@ -17,6 +17,7 @@ describe('access gate', () => {
 
 	it('only exempts the gate itself', () => {
 		expect(isExempt('/gate')).toBe(true);
+		expect(isExempt('/admin')).toBe(true);
 		expect(isExempt('/')).toBe(false);
 		expect(isExempt('/api/feed')).toBe(false);
 		expect(isExempt('/help')).toBe(false);

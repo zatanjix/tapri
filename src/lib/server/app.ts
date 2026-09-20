@@ -13,6 +13,7 @@ import { createSql, type Sql } from './db';
 import { FeedService } from './forum/feed';
 import { PostService } from './forum/posts';
 import { ReactionService } from './forum/reactions';
+import { ReportService } from './forum/reports';
 import { DevConsoleMailer, ResendMailer, SmtpMailer, type Mailer } from './mail/mailer';
 import { IpKeyer, RateLimiter } from './ratelimit';
 import { VerifyService } from './verify/service';
@@ -25,6 +26,7 @@ export interface App {
 	sessions: SessionService;
 	posts: PostService;
 	reactions: ReactionService;
+	reports: ReportService;
 	feed: FeedService;
 	ipKeyer: IpKeyer;
 	/** Best-effort, per server instance. Durable limits live in the services. */
@@ -89,6 +91,7 @@ async function build(): Promise<App> {
 		sessions: new SessionService(sql),
 		posts: new PostService({ sql, handleKey }),
 		reactions: new ReactionService(sql),
+		reports: new ReportService(sql),
 		feed: new FeedService({ sql, handleKey }),
 		ipKeyer: new IpKeyer(),
 		limits: {

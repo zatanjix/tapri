@@ -17,6 +17,7 @@ const STATUS: Record<string, number> = {
 	rate_limited: 429,
 	mail_failed: 502,
 	unavailable: 503,
+	already_reported: 409,
 	not_found: 404,
 	too_deep: 400,
 	unknown_category: 400,
