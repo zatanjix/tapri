@@ -55,7 +55,7 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 |---|---|
 | **Members-only** | Personal stories need a closed room. Nothing is indexed by search engines; link previews are generic. |
 | **Any `iitb.ac.in` address**, including staff | Simple and honest; signup says so plainly. |
-| **Fixed categories**: Academics, Hostel & Mess, Wellbeing, Harassment, Administration, Placements, General | One place instead of dozens of scattered groups. |
+| **Fixed categories**: Academics, Hostel & Mess, Wellbeing, Harassment, Administration, Placements, General, Feedback | One place instead of dozens of scattered groups. Feedback about Tapri itself stays in the open, where others can add to it. |
 | **Grievances and conversations** | Grievances collect an **"Affects me too"** count. A problem 340 people have marked is hard to dismiss. Conversations (**"I feel this too"** in Wellbeing) are for questions, advice and support. |
 | **A new random name in every thread** | Consistent within a conversation, untraceable across them. The thread author is marked `OP`. |
 | **One level of replies, sorted by most helpful** | Readable on phones; supportive answers rise first. |
@@ -173,6 +173,10 @@ src/routes/              pages: welcome, join, sign in, feeds, threads, composer
 src/routes/api/          HTTP endpoints
 tests/                   unit and integration tests, including anonymity checks
 ```
+
+## Reporting a security problem
+
+Privately, through the repository's **Security** tab. See [SECURITY.md](SECURITY.md).
 
 ## License
 

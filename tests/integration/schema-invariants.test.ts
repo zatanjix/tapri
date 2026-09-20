@@ -46,10 +46,10 @@ describe('anonymity invariants', () => {
 		expect(hits).toEqual([]);
 	});
 
-	it('seeds the seven categories in order', async () => {
+	it('seeds the categories in order', async () => {
 		const rows = await sql`select slug from categories order by sort_order`;
 		expect(rows.map((r) => r.slug)).toEqual([
-			'academics', 'hostel-mess', 'wellbeing', 'harassment', 'administration', 'placements', 'general'
+			'academics', 'hostel-mess', 'wellbeing', 'harassment', 'administration', 'placements', 'general', 'feedback'
 		]);
 	});
 });

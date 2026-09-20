@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_NOTES, DISCLAIMER, TIERS, categoryNote } from '../../src/lib/shared/support';
 
-const SLUGS = ['academics', 'hostel-mess', 'wellbeing', 'harassment', 'administration', 'placements', 'general'];
+const SLUGS = ['academics', 'hostel-mess', 'wellbeing', 'harassment', 'administration', 'placements', 'general', 'feedback'];
 
 describe('support data', () => {
 	it('orders tiers by urgency', () => {
