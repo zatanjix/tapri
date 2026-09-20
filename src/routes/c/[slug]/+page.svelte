@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CategoryBar from '$lib/components/CategoryBar.svelte';
 	import Feed from '$lib/components/Feed.svelte';
 	import HelpNote from '$lib/components/HelpNote.svelte';
 	import SupportBox from '$lib/components/SupportBox.svelte';
@@ -15,6 +16,7 @@
 
 <div class="wrap layout">
 	<div class="col">
+		<CategoryBar categories={data.categories} />
 		<header>
 			<h1>{data.category.name}</h1>
 			<p class="muted">{data.category.description}</p>

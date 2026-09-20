@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CategoryBar from '$lib/components/CategoryBar.svelte';
 	import Feed from '$lib/components/Feed.svelte';
 	import SupportBox from '$lib/components/SupportBox.svelte';
 	import SupportStrip from '$lib/components/SupportStrip.svelte';
@@ -14,6 +15,7 @@
 
 <div class="wrap layout">
 	<div class="col">
+		<CategoryBar categories={data.categories} />
 		<Feed items={data.items} tab={data.tab} sort={data.sort} page={data.page} tabs={data.tabs} sorts={data.sorts} />
 	</div>
 	<aside class="side">

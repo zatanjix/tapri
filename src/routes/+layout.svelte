@@ -31,7 +31,7 @@
 	<title>tapri</title>
 </svelte:head>
 
-<Band signedIn={data.signedIn} categories={data.categories} />
+<Band signedIn={data.signedIn} />
 
 <main>
 	{@render children()}
@@ -41,6 +41,7 @@
 	<p>Tapri is independent and not affiliated with the institute.</p>
 	<p class="links">
 		<a href="/help">Get help</a>
+		<a href="/rules">House rules</a>
 		{#if data.sourceUrl}<a href={data.sourceUrl} rel="noreferrer noopener">Source code</a>{/if}
 		{#if data.signedIn}<button type="button" onclick={signOut}>Sign out</button>{/if}
 		<span class="theme"><ThemeSwitch /></span>

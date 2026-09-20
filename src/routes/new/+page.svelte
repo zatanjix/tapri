@@ -107,7 +107,7 @@
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 
 	<div class="foot">
-		<span class="muted">You'll appear under a new random name in this thread. Drafts stay on this device.</span>
+		<span class="muted">You'll appear under a new random name in this thread. Drafts stay on this device. <a href="/rules">House rules</a>.</span>
 		<button class="btn" disabled={busy || !valid}>{busy ? 'Posting…' : 'Post'}</button>
 	</div>
 </form>

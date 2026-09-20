@@ -1,19 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/state';
-
-	let { signedIn, categories = [] }: { signedIn: boolean; categories: { slug: string; name: string }[] } = $props();
+	let { signedIn }: { signedIn: boolean } = $props();
 </script>
 
 <header class="band">
 	<div class="inner">
 		<a class="wm" href={signedIn ? '/' : '/welcome'}>tapri</a>
-		{#if signedIn}
-			<nav class="cats" aria-label="Categories">
-				{#each categories as c (c.slug)}
-					<a href="/c/{c.slug}" aria-current={page.url.pathname === `/c/${c.slug}` ? 'page' : undefined}>{c.name}</a>
-				{/each}
-			</nav>
-		{/if}
 		<div class="right">
 			<a class="help" href="/help">Get help</a>
 			{#if signedIn}
@@ -47,23 +38,6 @@
 		letter-spacing: -0.02em;
 		text-decoration: none;
 	}
-	.cats {
-		display: none;
-		gap: 16px;
-		font-size: 13.5px;
-		font-weight: 600;
-		overflow: hidden;
-		white-space: nowrap;
-	}
-	.cats a {
-		text-decoration: none;
-		padding: 4px 0;
-		border-bottom: 2px solid transparent;
-	}
-	.cats a:hover,
-	.cats a[aria-current='page'] {
-		border-bottom-color: currentColor;
-	}
 	.right {
 		margin-left: auto;
 		display: flex;
@@ -89,10 +63,7 @@
 	.long {
 		display: none;
 	}
-	@media (min-width: 960px) {
-		.cats {
-			display: flex;
-		}
+	@media (min-width: 560px) {
 		.long {
 			display: inline;
 		}

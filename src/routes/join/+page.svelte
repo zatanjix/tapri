@@ -238,6 +238,7 @@
 			<li>No hate, no spam, no harassment.</li>
 			<li>Don't share details that could identify anyone, including you.</li>
 		</ol>
+		<p class="alt muted"><a href="/rules">Read them in full</a></p>
 	{:else if step === 'done'}
 		<h1>You're in.</h1>
 		<p class="lede">Welcome to Tapri. Three things to remember:</p>
