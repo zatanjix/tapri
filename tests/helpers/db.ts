@@ -12,5 +12,5 @@ export async function freshDb(): Promise<Sql> {
 }
 
 export async function clearData(sql: Sql): Promise<void> {
-	await sql`truncate accounts, sessions, issuances, spent_tokens cascade`;
+	await sql`truncate accounts, sessions, issuances, spent_tokens, verifications cascade`;
 }

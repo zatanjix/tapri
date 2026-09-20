@@ -25,8 +25,29 @@
 	color-scheme: light;
 }
 
+:root[data-theme='dark'] {
+	--bg: #171717;
+	--surface: #202020;
+	--ink: #f1efea;
+	--muted: #b3b0a9;
+	--border: #2f2f2f;
+	--band: #e5b43e;
+	--count: #ff8b7b;
+	--well: #1c2a24;
+	--well-ink: #cfe6da;
+	--well-line: #2c4238;
+	--urgent: #3a1a17;
+	--urgent-ink: #ffc9c2;
+	--warn: #33290f;
+	--warn-ink: #f3d58c;
+	--btn: #f1efea;
+	--btn-ink: #171717;
+	--disabled: #4a4945;
+	color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-	:root {
+	:root[data-theme='system'] {
 		--bg: #171717;
 		--surface: #202020;
 		--ink: #f1efea;

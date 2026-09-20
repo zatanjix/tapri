@@ -1,15 +1,21 @@
 import { AccountService } from './accounts/service';
 import { SessionService } from './accounts/sessions';
-import { ensureHandleKey, loadHandleKey, loadIssuerKeys, loadSemesterKey, type IssuerKeys } from './crypto/keys';
+import {
+	ensureHandleKey,
+	importIssuerKeys,
+	loadHandleKey,
+	loadIssuerKeys,
+	loadSemesterKey,
+	type IssuerKeys
+} from './crypto/keys';
 import { semesterId } from './crypto/semester';
 import { createSql, type Sql } from './db';
 import { FeedService } from './forum/feed';
 import { PostService } from './forum/posts';
 import { ReactionService } from './forum/reactions';
-import { DevConsoleMailer, SmtpMailer, type Mailer } from './mail/mailer';
+import { DevConsoleMailer, ResendMailer, SmtpMailer, type Mailer } from './mail/mailer';
 import { IpKeyer, RateLimiter } from './ratelimit';
-import { PendingStore } from './verify/pending';
-import { VerifyService, type PendingVerification } from './verify/service';
+import { VerifyService } from './verify/service';
 
 export interface App {
 	sql: Sql;
@@ -21,66 +27,69 @@ export interface App {
 	reactions: ReactionService;
 	feed: FeedService;
 	ipKeyer: IpKeyer;
-	limits: {
-		verifyStart: RateLimiter;
-		verifyOtp: RateLimiter;
-		signIn: RateLimiter;
-		post: RateLimiter;
-		reply: RateLimiter;
-		react: RateLimiter;
-	};
+	/** Best-effort, per server instance. Durable limits live in the services. */
+	limits: { verifyStart: RateLimiter; verifyOtp: RateLimiter; signIn: RateLimiter; react: RateLimiter };
 }
 
+const env = (name: string): string | undefined => process.env[name] || undefined;
+
 function required(name: string): string {
-	const v = process.env[name];
+	const v = env(name);
 	if (!v) throw new Error(`${name} is not set`);
 	return v;
 }
 
 function mailer(): Mailer {
-	if (process.env.MAILER === 'smtp') return new SmtpMailer(required('MAIL_FROM'));
-	if (process.env.NODE_ENV === 'production') throw new Error('MAILER=smtp is required in production');
-	return new DevConsoleMailer();
+	switch (env('MAILER')) {
+		case 'resend':
+			return new ResendMailer(required('RESEND_API_KEY'), required('MAIL_FROM'));
+		case 'smtp':
+			return new SmtpMailer(required('MAIL_FROM'));
+		default:
+			if (process.env.NODE_ENV === 'production') throw new Error('MAILER must be resend or smtp in production');
+			return new DevConsoleMailer();
+	}
+}
+
+/** Keys come from environment variables on hosted platforms, or from files in KEYS_DIR locally. */
+async function loadKeys(): Promise<{ keys: IssuerKeys; semesterKey: Buffer; handleKey: Buffer }> {
+	const keyId = env('ISSUER_KEY_ID') ?? semesterId();
+	const privateKey = env('ISSUER_PRIVATE_KEY');
+	if (privateKey) {
+		return {
+			keys: await importIssuerKeys(keyId, required('ISSUER_PUBLIC_KEY'), privateKey),
+			semesterKey: Buffer.from(required('SEMESTER_KEY'), 'base64url'),
+			handleKey: Buffer.from(required('HANDLE_KEY'), 'base64url')
+		};
+	}
+	const dir = required('KEYS_DIR');
+	await ensureHandleKey(dir);
+	return {
+		keys: await loadIssuerKeys(dir, keyId),
+		semesterKey: await loadSemesterKey(dir, keyId),
+		handleKey: await loadHandleKey(dir)
+	};
 }
 
 async function build(): Promise<App> {
-	const dir = required('KEYS_DIR');
-	const keyId = process.env.ISSUER_KEY_ID ?? semesterId();
 	const sql = createSql(required('DATABASE_URL'));
-	const keys = await loadIssuerKeys(dir, keyId);
-	await ensureHandleKey(dir);
-	const handleKey = await loadHandleKey(dir);
-	const pending = new PendingStore<PendingVerification>(10 * 60_000);
-	const limits = {
-		verifyStart: new RateLimiter(5, 60 * 60_000), // 5 codes per hour per network
-		verifyOtp: new RateLimiter(30, 60 * 60_000),
-		signIn: new RateLimiter(20, 60 * 60_000),
-		post: new RateLimiter(5, 60 * 60_000),
-		reply: new RateLimiter(30, 60 * 60_000),
-		react: new RateLimiter(300, 60 * 60_000)
-	};
-
-	const minute = setInterval(() => {
-		pending.sweep();
-		for (const l of Object.values(limits)) l.sweep();
-	}, 60_000);
-	minute.unref();
-
-	const sessions = new SessionService(sql);
-	const hourly = setInterval(() => void sessions.purgeExpired(), 60 * 60_000);
-	hourly.unref();
-
+	const { keys, semesterKey, handleKey } = await loadKeys();
 	return {
 		sql,
 		keys,
-		verify: new VerifyService({ sql, keys, semesterKey: await loadSemesterKey(dir, keyId), mailer: mailer(), pending }),
+		verify: new VerifyService({ sql, keys, semesterKey, mailer: mailer() }),
 		accounts: new AccountService({ sql, keys }),
-		sessions,
+		sessions: new SessionService(sql),
 		posts: new PostService({ sql, handleKey }),
 		reactions: new ReactionService(sql),
 		feed: new FeedService({ sql, handleKey }),
 		ipKeyer: new IpKeyer(),
-		limits
+		limits: {
+			verifyStart: new RateLimiter(5, 60 * 60_000),
+			verifyOtp: new RateLimiter(30, 60 * 60_000),
+			signIn: new RateLimiter(20, 60 * 60_000),
+			react: new RateLimiter(300, 60 * 60_000)
+		}
 	};
 }
 

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createToken, finalizeToken, importIssuerKey } from '../../src/lib/client/tokens';
 import { blindSign, verifyToken } from '../../src/lib/server/crypto/issuer';
 import {
-	createIssuerKeys, createSemesterKey, ensureHandleKey, loadHandleKey, loadIssuerKeys, loadSemesterKey, retireSemesterKey, saveIssuerKeys
+	createIssuerKeys, createSemesterKey, ensureHandleKey, exportIssuerKeys, importIssuerKeys, loadHandleKey, loadIssuerKeys, loadSemesterKey, retireSemesterKey, saveIssuerKeys
 } from '../../src/lib/server/crypto/keys';
 
 let dir: string;
@@ -52,5 +52,15 @@ describe('key files', () => {
 		await ensureHandleKey(dir);
 		expect((await loadHandleKey(dir)).equals(first)).toBe(true);
 		expect(first.length).toBe(32);
+	});
+
+	it('round-trips issuer keys through base64 text for environment variables', async () => {
+		const keys = await createIssuerKeys('2026-autumn', 2048);
+		const exported = await exportIssuerKeys(keys);
+		const back = await importIssuerKeys('2026-autumn', exported.publicKey, exported.privateKey);
+		const pub = await importIssuerKey(back.publicSpki);
+		const t = await createToken(pub, back.keyId);
+		const sig = await finalizeToken(pub, t, await blindSign(back, t.blindedMsg));
+		expect(await verifyToken(keys, t.preparedMsg, sig)).toBe(true);
 	});
 });

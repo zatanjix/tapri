@@ -85,7 +85,10 @@ describe('FeedService', () => {
 	});
 
 	it('pages', async () => {
-		for (let i = 0; i < 25; i++) await post(`Post number ${i}`);
+		for (let i = 0; i < 25; i++) {
+			if (i % 5 === 0) alice = await makeAccount(sql); // stay under the hourly post limit
+			await post(`Post number ${i}`);
+		}
 		expect(await feed.list({ tab: 'all', sort: 'new', page: 1 })).toHaveLength(20);
 		expect(await feed.list({ tab: 'all', sort: 'new', page: 2 })).toHaveLength(5);
 	});

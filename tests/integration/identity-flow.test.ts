@@ -5,8 +5,7 @@ import { AccountService } from '../../src/lib/server/accounts/service';
 import { SessionService } from '../../src/lib/server/accounts/sessions';
 import type { Sql } from '../../src/lib/server/db';
 import { MemoryMailer } from '../../src/lib/server/mail/mailer';
-import { PendingStore } from '../../src/lib/server/verify/pending';
-import { VerifyService, type PendingVerification } from '../../src/lib/server/verify/service';
+import { VerifyService } from '../../src/lib/server/verify/service';
 import { generateAccountSecret } from '../../src/lib/shared/secret';
 import { freshDb } from '../helpers/db';
 import { testKeys } from '../helpers/keys';
@@ -23,8 +22,7 @@ describe('identity flow', () => {
 	it('email → OTP → blind signature → account → session, with no stored link to the email', async () => {
 		const keys = await testKeys();
 		const mailer = new MemoryMailer();
-		const pending = new PendingStore<PendingVerification>(600_000);
-		const verify = new VerifyService({ sql, keys, semesterKey: randomBytes(32), mailer, pending });
+		const verify = new VerifyService({ sql, keys, semesterKey: randomBytes(32), mailer });
 		const accounts = new AccountService({ sql, keys });
 		const sessions = new SessionService(sql);
 		const email = '00x0002@iitb.ac.in';
@@ -37,7 +35,7 @@ describe('identity flow', () => {
 		if (!start.ok) throw new Error(start.error);
 		const otp = await verify.confirmOtp(start.pendingId, mailer.lastCodeFor(email)!);
 		if (!otp.ok) throw new Error(otp.error);
-		expect(pending.size).toBe(0);
+		expect(await sql`select 1 from verifications`).toHaveLength(0);
 		// browser
 		const signature = await finalizeToken(pub, token, otp.blindSig);
 		const secret = generateAccountSecret();

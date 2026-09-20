@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-node';
+import adapter from '@sveltejs/adapter-vercel';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 
@@ -10,7 +10,8 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter(),
+			// Same region as the Neon database (Singapore).
+			adapter: adapter({ runtime: 'nodejs22.x', regions: ['sin1'] }),
 			// Nothing loads from anywhere but Tapri itself.
 			csp: {
 				mode: 'auto',

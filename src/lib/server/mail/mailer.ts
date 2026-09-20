@@ -44,3 +44,26 @@ export class SmtpMailer implements Mailer {
 		});
 	}
 }
+
+/** Sends through Resend's HTTP API. Resend sees the recipient address; it never sees accounts. */
+export class ResendMailer implements Mailer {
+	constructor(
+		private apiKey: string,
+		private from: string,
+		private fetcher: typeof fetch = fetch
+	) {}
+
+	async sendOtp(to: string, code: string): Promise<void> {
+		const res = await this.fetcher('https://api.resend.com/emails', {
+			method: 'POST',
+			headers: { authorization: `Bearer ${this.apiKey}`, 'content-type': 'application/json' },
+			body: JSON.stringify({
+				from: this.from,
+				to: [to],
+				subject: `${code} is your tapri code`,
+				text: `Your code is ${code}. It expires in 10 minutes.\n\nIf you didn't ask for this, you can ignore this email.`
+			})
+		});
+		if (!res.ok) throw new Error(`Resend refused the email (${res.status})`);
+	}
+}

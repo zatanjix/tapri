@@ -12,6 +12,7 @@
 	import { page } from '$app/state';
 	import { loadTicket } from '$lib/client/signup-store';
 	import Band from '$lib/components/Band.svelte';
+	import ThemeSwitch from '$lib/components/ThemeSwitch.svelte';
 
 	let { data, children } = $props();
 
@@ -42,6 +43,7 @@
 		<a href="/help">Get help</a>
 		{#if data.sourceUrl}<a href={data.sourceUrl} rel="noreferrer noopener">Source code</a>{/if}
 		{#if data.signedIn}<button type="button" onclick={signOut}>Sign out</button>{/if}
+		<span class="theme"><ThemeSwitch /></span>
 	</p>
 </footer>
 
@@ -62,8 +64,12 @@
 	}
 	.links {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 16px;
 		align-items: center;
+	}
+	.theme {
+		margin-left: auto;
 	}
 	.links button {
 		background: none;

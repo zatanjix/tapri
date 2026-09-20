@@ -10,8 +10,11 @@ export interface NewPost {
 	body: string;
 }
 
-export type CreatePostError = 'unknown_category' | 'invalid_kind' | 'invalid_title' | 'invalid_body';
-export type CreateReplyError = 'not_found' | 'too_deep' | 'invalid_body';
+export type CreatePostError = 'unknown_category' | 'invalid_kind' | 'invalid_title' | 'invalid_body' | 'rate_limited';
+export type CreateReplyError = 'not_found' | 'too_deep' | 'invalid_body' | 'rate_limited';
+
+/** Per account per hour. Counted from the account's own recent rows, so no extra data is kept. */
+export const HOURLY_LIMITS = { posts: 5, replies: 30 } as const;
 
 const KINDS: readonly Kind[] = ['grievance', 'conversation'];
 
@@ -24,6 +27,11 @@ export class PostService {
 		if (!KINDS.includes(input.kind as Kind)) return { ok: false, error: 'invalid_kind' };
 		if (title.length < LIMITS.titleMin || title.length > LIMITS.titleMax) return { ok: false, error: 'invalid_title' };
 		if (body.length === 0 || body.length > LIMITS.bodyMax) return { ok: false, error: 'invalid_body' };
+
+		const [{ n }] = await this.deps.sql`
+			select count(*)::int as n from posts
+			where account_id = ${accountId} and published_on > now() - interval '1 hour'`;
+		if (n >= HOURLY_LIMITS.posts) return { ok: false, error: 'rate_limited' };
 
 		const [row] = await this.deps.sql`
 			insert into posts (category_id, account_id, kind, title, body)
@@ -43,6 +51,11 @@ export class PostService {
 
 		const [post] = await sql`select 1 from posts where id = ${postId} and status = 'published'`;
 		if (!post) return { ok: false, error: 'not_found' };
+
+		const [{ n }] = await sql`
+			select count(*)::int as n from replies
+			where account_id = ${accountId} and published_on > now() - interval '1 hour'`;
+		if (n >= HOURLY_LIMITS.replies) return { ok: false, error: 'rate_limited' };
 
 		if (input.parentId !== undefined) {
 			const [parent] = await sql`

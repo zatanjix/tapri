@@ -125,3 +125,15 @@ describe('PostService.delete', () => {
 		expect(t.post.replyCount).toBe(1);
 	});
 });
+
+describe('PostService limits', () => {
+	it('limits posts and replies per account per hour', async () => {
+		for (let i = 0; i < 5; i++) await created(alice, { ...grievance, title: `Post number ${i}` });
+		expect(await posts.createPost(alice, grievance)).toEqual({ ok: false, error: 'rate_limited' });
+		expect((await posts.createPost(bob, grievance)).ok).toBe(true);
+
+		const id = await created(bob);
+		for (let i = 0; i < 30; i++) await posts.createReply(carol, id, { body: `reply ${i}` });
+		expect(await posts.createReply(carol, id, { body: 'one too many' })).toEqual({ ok: false, error: 'rate_limited' });
+	});
+});

@@ -37,5 +37,5 @@ export function clearTicket(storage: Storage = localStorage): void {
 
 export const isReady = (t: ReadyTicket, now: number = Date.now()): boolean => now >= t.redeemAt;
 
-/** One to four minutes, so the account's creation can't be matched to the email check. */
-export const randomWaitMs = (rand: () => number = Math.random): number => 60_000 + Math.floor(rand() * 180_000);
+/** 15–45 seconds, counted from verification, so the account's creation can't be matched to the email check. */
+export const randomWaitMs = (rand: () => number = Math.random): number => 15_000 + Math.floor(rand() * 30_000);

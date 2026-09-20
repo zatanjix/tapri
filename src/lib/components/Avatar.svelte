@@ -28,12 +28,18 @@
 	.t3 { background: #f1e6f5; color: #74408a; }
 	.t4 { background: #f7e7e7; color: #9b3434; }
 	.t5 { background: #e9eef0; color: #3e5a66; }
+	:global([data-theme='dark']) .t0 { background: #20352c; color: #9fd3b9; }
+	:global([data-theme='dark']) .t1 { background: #3a2a1c; color: #f0b98a; }
+	:global([data-theme='dark']) .t2 { background: #1f2940; color: #a9bdf0; }
+	:global([data-theme='dark']) .t3 { background: #33223b; color: #d3aee3; }
+	:global([data-theme='dark']) .t4 { background: #3b2020; color: #f0a8a8; }
+	:global([data-theme='dark']) .t5 { background: #22303a; color: #a9c3cf; }
 	@media (prefers-color-scheme: dark) {
-		.t0 { background: #20352c; color: #9fd3b9; }
-		.t1 { background: #3a2a1c; color: #f0b98a; }
-		.t2 { background: #1f2940; color: #a9bdf0; }
-		.t3 { background: #33223b; color: #d3aee3; }
-		.t4 { background: #3b2020; color: #f0a8a8; }
-		.t5 { background: #22303a; color: #a9c3cf; }
+		:global([data-theme='system']) .t0 { background: #20352c; color: #9fd3b9; }
+		:global([data-theme='system']) .t1 { background: #3a2a1c; color: #f0b98a; }
+		:global([data-theme='system']) .t2 { background: #1f2940; color: #a9bdf0; }
+		:global([data-theme='system']) .t3 { background: #33223b; color: #d3aee3; }
+		:global([data-theme='system']) .t4 { background: #3b2020; color: #f0a8a8; }
+		:global([data-theme='system']) .t5 { background: #22303a; color: #a9c3cf; }
 	}
 </style>

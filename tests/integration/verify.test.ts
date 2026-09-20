@@ -3,8 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createToken, importIssuerKey } from '../../src/lib/client/tokens';
 import type { Sql } from '../../src/lib/server/db';
 import { MemoryMailer } from '../../src/lib/server/mail/mailer';
-import { PendingStore } from '../../src/lib/server/verify/pending';
-import { VerifyService, type PendingVerification } from '../../src/lib/server/verify/service';
+import { VerifyService } from '../../src/lib/server/verify/service';
 import { clearData, freshDb } from '../helpers/db';
 import { testKeys } from '../helpers/keys';
 
@@ -22,13 +21,7 @@ afterAll(async () => {
 beforeEach(async () => {
 	await clearData(sql);
 	mailer = new MemoryMailer();
-	verify = new VerifyService({
-		sql,
-		keys: await testKeys(),
-		semesterKey: randomBytes(32),
-		mailer,
-		pending: new PendingStore<PendingVerification>(10 * 60_000)
-	});
+	verify = new VerifyService({ sql, keys: await testKeys(), semesterKey: randomBytes(32), mailer });
 });
 
 async function blinded() {
@@ -36,12 +29,16 @@ async function blinded() {
 	return (await createToken(await importIssuerKey(keys.publicSpki), keys.keyId)).blindedMsg;
 }
 
+async function started() {
+	const start = await verify.start(EMAIL, await blinded(), '2026-autumn');
+	if (!start.ok) throw new Error(start.error);
+	return start.pendingId;
+}
+
 describe('VerifyService', () => {
 	it('sends an OTP and returns a blind signature for the right code', async () => {
-		const start = await verify.start(EMAIL, await blinded(), '2026-autumn');
-		expect(start.ok).toBe(true);
-		if (!start.ok) return;
-		const result = await verify.confirmOtp(start.pendingId, mailer.lastCodeFor(EMAIL)!);
+		const id = await started();
+		const result = await verify.confirmOtp(id, mailer.lastCodeFor(EMAIL)!);
 		expect(result.ok).toBe(true);
 		if (result.ok) expect(result.blindSig.length).toBe(256);
 	});
@@ -57,26 +54,44 @@ describe('VerifyService', () => {
 	});
 
 	it('allows one issuance per email per semester', async () => {
-		const a = await verify.start(EMAIL, await blinded(), '2026-autumn');
-		if (!a.ok) throw new Error('start failed');
-		await verify.confirmOtp(a.pendingId, mailer.lastCodeFor(EMAIL)!);
+		const id = await started();
+		await verify.confirmOtp(id, mailer.lastCodeFor(EMAIL)!);
 		expect(await verify.start(EMAIL, await blinded(), '2026-autumn')).toEqual({ ok: false, error: 'already_claimed' });
 	});
 
-	it('locks out after 5 wrong codes', async () => {
-		const start = await verify.start(EMAIL, await blinded(), '2026-autumn');
-		if (!start.ok) throw new Error('start failed');
-		for (let i = 0; i < 4; i++) expect(await verify.confirmOtp(start.pendingId, '000000x')).toEqual({ ok: false, error: 'wrong_code' });
-		expect(await verify.confirmOtp(start.pendingId, '000000x')).toEqual({ ok: false, error: 'too_many_attempts' });
-		expect(await verify.confirmOtp(start.pendingId, mailer.lastCodeFor(EMAIL)!)).toEqual({ ok: false, error: 'expired' });
+	it('limits outstanding codes per email', async () => {
+		await started();
+		await started();
+		await started();
+		expect(await verify.start(EMAIL, await blinded(), '2026-autumn')).toEqual({ ok: false, error: 'rate_limited' });
+		expect(mailer.sent).toHaveLength(3);
 	});
 
-	it('stores only an HMAC of the email', async () => {
-		const start = await verify.start(EMAIL, await blinded(), '2026-autumn');
-		if (!start.ok) throw new Error('start failed');
-		await verify.confirmOtp(start.pendingId, mailer.lastCodeFor(EMAIL)!);
-		const rows = await sql`select email_hmac, semester from issuances`;
+	it('locks out after 5 wrong codes', async () => {
+		const id = await started();
+		for (let i = 0; i < 4; i++) expect(await verify.confirmOtp(id, '000000x')).toEqual({ ok: false, error: 'wrong_code' });
+		expect(await verify.confirmOtp(id, '000000x')).toEqual({ ok: false, error: 'too_many_attempts' });
+		expect(await verify.confirmOtp(id, mailer.lastCodeFor(EMAIL)!)).toEqual({ ok: false, error: 'expired' });
+	});
+
+	it('expires codes', async () => {
+		const id = await started();
+		await sql`update verifications set expires_at = now() - interval '1 second'`;
+		expect(await verify.confirmOtp(id, mailer.lastCodeFor(EMAIL)!)).toEqual({ ok: false, error: 'expired' });
+	});
+
+	it('stores neither the email nor the code, and clears the row after use', async () => {
+		const id = await started();
+		const code = mailer.lastCodeFor(EMAIL)!;
+		const [row] = await sql`select * from verifications`;
+		for (const v of Object.values(row)) {
+			const bytes = Buffer.isBuffer(v) ? v : Buffer.from(String(v));
+			expect(bytes.includes(Buffer.from(EMAIL))).toBe(false);
+			expect(bytes.includes(Buffer.from(code))).toBe(false);
+		}
+		await verify.confirmOtp(id, code);
+		expect(await sql`select 1 from verifications`).toHaveLength(0);
+		const rows = await sql`select email_hmac from issuances`;
 		expect(rows).toHaveLength(1);
-		expect(Buffer.from(rows[0].email_hmac).includes(Buffer.from(EMAIL))).toBe(false);
 	});
 });

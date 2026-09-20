@@ -39,8 +39,8 @@ describe('signup store', () => {
 		expect(isReady(ticket, 1000)).toBe(true);
 	});
 
-	it('waits between one and four minutes', () => {
-		expect(randomWaitMs(() => 0)).toBe(60_000);
-		expect(randomWaitMs(() => 0.999999)).toBeLessThanOrEqual(240_000);
+	it('waits between 15 and 45 seconds', () => {
+		expect(randomWaitMs(() => 0)).toBe(15_000);
+		expect(randomWaitMs(() => 0.999999)).toBeLessThanOrEqual(45_000);
 	});
 });

@@ -84,3 +84,15 @@ export async function ensureHandleKey(dir: string): Promise<void> {
 export async function loadHandleKey(dir: string): Promise<Buffer> {
 	return readFile(handlePath(dir));
 }
+
+/** For hosting platforms without persistent disks: keys as base64url text in environment variables. */
+export async function exportIssuerKeys(keys: IssuerKeys): Promise<{ publicKey: string; privateKey: string }> {
+	const pkcs8 = new Uint8Array(await crypto.subtle.exportKey('pkcs8', keys.privateKey));
+	return { publicKey: Buffer.from(keys.publicSpki).toString('base64url'), privateKey: Buffer.from(pkcs8).toString('base64url') };
+}
+
+export async function importIssuerKeys(keyId: string, publicKey: string, privateKey: string): Promise<IssuerKeys> {
+	const pub = await crypto.subtle.importKey('spki', Buffer.from(publicKey, 'base64url'), ALG, true, ['verify']);
+	const priv = await crypto.subtle.importKey('pkcs8', Buffer.from(privateKey, 'base64url'), ALG, true, ['sign']);
+	return fromPair(keyId, pub, priv);
+}

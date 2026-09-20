@@ -19,6 +19,7 @@ export class SessionService {
 	async signIn(rawSecret: string): Promise<string | null> {
 		const secret = normalizeSecret(rawSecret);
 		if (!secret) return null;
+		await this.purgeExpired();
 		const [row] = await this.sql`
 			select id from accounts
 			where secret_hash = ${sha256(secret)} and status = 'active' and valid_until >= current_date`;

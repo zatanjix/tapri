@@ -8,7 +8,6 @@ export async function POST({ locals, params, request }) {
 	const postId = idParam(params.id);
 	if (!postId) return fail('not_found');
 	const app = await getApp();
-	if (!app.limits.reply.take(accountId)) return fail('rate_limited');
 
 	const body = await readJson(request);
 	if (!body || typeof body.body !== 'string') return fail('bad_request');

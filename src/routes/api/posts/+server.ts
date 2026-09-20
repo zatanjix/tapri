@@ -8,7 +8,6 @@ export async function POST({ locals, request }) {
 	const accountId = requireAccount(locals);
 	if (!accountId) return fail('unauthorized');
 	const app = await getApp();
-	if (!app.limits.post.take(accountId)) return fail('rate_limited');
 	const body = await readJson(request);
 	if (!body || FIELDS.some((f) => typeof body[f] !== 'string')) return fail('bad_request');
 	const result = await app.posts.createPost(accountId, {

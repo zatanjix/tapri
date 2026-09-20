@@ -10,7 +10,7 @@ Tapri is independent. It is not affiliated with or endorsed by the institute or 
 
 1. **Only the IIT Bombay community gets in.** Every account is backed by a verified `@iitb.ac.in` address.
 2. **Nobody can link a post to a person,** including the people who run the server.
-3. **Nothing unnecessary is kept.** No IP addresses, email addresses, device data or analytics.
+3. **Nothing unnecessary is kept.** Tapri stores no IP addresses, email addresses, device data or analytics.
 4. **Everything is verifiable.** The code is open, and these promises are enforced by automated tests.
 5. **Help is always one tap away,** on every page, logged in or not.
 
@@ -45,7 +45,9 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 |---|---|
 | That an IITB email joined this semester (as a keyed hash, unreadable after the semester) | Which account belongs to which email |
 | That one pseudonymous account wrote certain posts | Who that account is |
-| What's posted | Your IP address, device or browser |
+| What's posted | Your IP address, device or browser (never stored by Tapri) |
+
+**What our providers can see.** Tapri runs on Vercel (hosting) with Neon (database) and Resend (email). Vercel keeps short-lived request logs, which include IP addresses. Resend sees the address it delivers a code to. Neither ever sees which account is yours: that link doesn't exist anywhere, so there's nothing for anyone to hand over.
 
 ## Product decisions
 
@@ -64,10 +66,10 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 
 ## Privacy engineering
 
-- **No IP addresses anywhere.** Logging is off at every layer. Rate limiting uses an in-memory hash of the IP with a secret discarded daily.
-- **No third parties.** No CDN, analytics, or external fonts or scripts.
+- **No IP addresses in Tapri's data.** The app never writes one down. Rate limiting uses an in-memory hash of the IP with a secret discarded daily.
+- **No trackers.** No analytics, and no fonts, scripts or images from other sites.
 - **Emails are never stored.** Only `HMAC(email, semester_key)` is kept, and the key is destroyed each semester.
-- **Verification happens in memory.** A restart erases anything in progress.
+- **Pending verifications are short-lived.** They hold only hashed values and are deleted when used or after 10 minutes.
 - **Recovery keys and sessions are stored only as SHA-256 hashes.**
 - **Minimal timestamps.** They exist only where a feature needs one.
 - **Outbound links carry no referrer.**
@@ -80,21 +82,17 @@ Tests enforce this:
 ## Architecture
 
 ```
-Browser ──HTTPS──▶ Caddy (TLS, no logs) ─┐
-Tor ─────onion───▶ tor ──────────────────┤
-                                         ▼
-               App (SvelteKit on Node, TypeScript)
-               ├─ Issuer      blind signatures
-               ├─ Verifier    one-time email codes
-               ├─ Accounts    tickets, recovery keys, sessions
-               ├─ Forum       posts, replies, votes, "affects me too"
-               └─ Limits      in-memory rate limiting
+Browser ──HTTPS──▶ Vercel (SvelteKit on Node, TypeScript)
+                   ├─ Issuer      blind signatures
+                   ├─ Verifier    one-time email codes ──▶ Resend
+                   ├─ Accounts    tickets, recovery keys, sessions
+                   └─ Forum       posts, replies, votes, "affects me too"
                                          │
-                                    PostgreSQL
+                                  Neon PostgreSQL
 ```
 
-- **Self-hosted on a single server,** with no managed platforms, since those require an identity and keep logs.
-- **Codes are sent from Tapri's own mail server.** Email services keep recipient lists.
+- **Keys live in environment settings,** never in the code or the database.
+- **Database changes are applied during each deploy.**
 
 ## Cryptography
 
@@ -159,6 +157,8 @@ At the start of each semester:
 npm run keygen -- 2027-spring
 npm run retire-key -- 2026-autumn
 ```
+
+**Deploying:** `npm run export-vercel-env` writes a fresh set of production keys to `.env.vercel` (git-ignored). Copy them into the hosting provider's environment settings along with `DATABASE_URL`, `RESEND_API_KEY` and `MAIL_FROM`. While `ACCESS_PASSPHRASE` is set, the site asks for it before anything else; remove it to open the site.
 
 ## Layout
 

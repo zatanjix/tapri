@@ -26,8 +26,8 @@
 	const fullEmail = $derived(email.includes('@') ? email.trim() : `${email.trim()}@iitb.ac.in`);
 	const stepIndex = $derived(ORDER.indexOf(step));
 	const remaining = $derived(ticket ? Math.max(0, Math.ceil((ticket.redeemAt - now) / 1000)) : 0);
-	/** The wait is at most four minutes, so the bar fills against that. */
-	const progress = $derived(ticket ? Math.min(1, Math.max(0, 1 - (ticket.redeemAt - now) / 240_000)) : 0);
+	/** The wait is at most 45 seconds, so the bar fills against that. */
+	const progress = $derived(ticket ? Math.min(1, Math.max(0, 1 - (ticket.redeemAt - now) / 45_000)) : 0);
 
 	onMount(() => {
 		const existing = loadTicket();
@@ -223,7 +223,7 @@
 	{:else if step === 'wait' && ticket}
 		<h1>Setting up your account</h1>
 		<p class="lede">
-			{#if remaining > 0}Ready in about {Math.ceil(remaining / 60)} minute{remaining > 60 ? 's' : ''}.{:else}Almost there…{/if}
+			{#if remaining > 0}Ready in about {remaining} seconds.{:else}Almost there…{/if}
 			You can close this tab; it'll finish next time you open Tapri here.
 		</p>
 		<div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(progress * 100)}>
