@@ -22,9 +22,13 @@ describe('support data', () => {
 			expect(tels).toContain(n);
 	});
 
-	it('has a note for every category', () => {
-		for (const slug of SLUGS) expect(categoryNote(slug)?.text.length ?? 0, slug).toBeGreaterThan(20);
-		expect(Object.keys(CATEGORY_NOTES).sort()).toEqual([...SLUGS].sort());
+	it('notes only the categories where support is the right answer', () => {
+		expect(Object.keys(CATEGORY_NOTES).sort()).toEqual(['general', 'harassment', 'placements', 'wellbeing']);
+		for (const slug of Object.keys(CATEGORY_NOTES)) {
+			expect(categoryNote(slug)?.text.length ?? 0, slug).toBeGreaterThan(20);
+			expect(SLUGS, slug).toContain(slug);
+		}
+		for (const slug of ['academics', 'hostel-mess', 'administration']) expect(categoryNote(slug), slug).toBeUndefined();
 	});
 
 	it('states independence', () => {

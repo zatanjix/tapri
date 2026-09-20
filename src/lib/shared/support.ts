@@ -105,21 +105,9 @@ export const CATEGORY_NOTES: Record<string, CategoryNote> = {
 		text: "You can report harassment to the institute's Internal Complaints Committee, and ragging to the national anti-ragging helpline on 1800 180 5522. Counsellors can help too.",
 		counselling: true
 	},
-	academics: {
-		text: "To take this further: the course instructor first, then your department's academic committee, then the academic General Secretary.",
-		counselling: false
-	},
-	'hostel-mess': {
-		text: 'To take this further: your hostel council and General Secretary, or the mess committee for food.',
-		counselling: false
-	},
-	administration: {
-		text: "To take this further: the office responsible first, then your student representatives.",
-		counselling: false
-	},
 	placements: {
-		text: 'To take this further: your department placement coordinator, then the placement office. If the pressure is getting to you, counsellors can help.',
-		counselling: false
+		text: 'If the pressure is getting to you, counsellors can help.',
+		counselling: true
 	},
 	general: {
 		text: 'Need someone to talk to? Support is available any time.',

@@ -129,7 +129,7 @@ Browser ──HTTPS──▶ Vercel (SvelteKit on Node, TypeScript)
 
 - **"Get help" is on every page** and works without an account.
 - **Resources are ordered by urgency:** emergency, 24×7, on campus, outside campus.
-- **Each category shows help that fits it:** counselling for Wellbeing, complaint and anti-ragging channels for Harassment, and escalation contacts for grievances.
+- **Categories where support is the right answer carry a note:** counselling for Wellbeing and Placements, and complaint and anti-ragging channels for Harassment.
 - **Distress in any post or reply** brings up a gentle note with support options. It never blocks posting.
 - **Numbers are tap-to-call** and kept in a single, regularly checked file.
 
