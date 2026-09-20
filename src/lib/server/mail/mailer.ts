@@ -1,5 +1,7 @@
 import nodemailer, { type Transporter } from 'nodemailer';
 
+export class MailError extends Error {}
+
 export interface Mailer {
 	sendOtp(to: string, code: string): Promise<void>;
 }
@@ -64,6 +66,6 @@ export class ResendMailer implements Mailer {
 				text: `Your code is ${code}. It expires in 10 minutes.\n\nIf you didn't ask for this, you can ignore this email.`
 			})
 		});
-		if (!res.ok) throw new Error(`Resend refused the email (${res.status})`);
+		if (!res.ok) throw new MailError(`Resend refused the email (${res.status}): ${(await res.text()).slice(0, 200)}`);
 	}
 }

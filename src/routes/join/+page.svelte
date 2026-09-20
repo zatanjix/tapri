@@ -50,7 +50,9 @@
 		wrong_code: "That code isn't right. Check the email and try again.",
 		expired: 'That code has expired. Request a new one.',
 		too_many_attempts: 'Too many wrong codes. Request a new one.',
-		network: "Couldn't reach Tapri. Check your connection and try again."
+		network: "Couldn't reach Tapri. Check your connection and try again.",
+		mail_failed: "We couldn't send the code just now. Please try again in a few minutes.",
+		unavailable: 'Tapri is having trouble right now. Please try again in a few minutes.'
 	};
 	const message = (e: string) => MESSAGES[e] ?? 'Something went wrong. Please try again.';
 
