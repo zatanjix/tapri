@@ -59,7 +59,7 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 | **Grievances and conversations** | Grievances collect an **"Affects me too"** count. A problem 340 people have marked is hard to dismiss. Conversations (**"I feel this too"** in Wellbeing) are for questions, advice and support. |
 | **A new random name in every thread** | Consistent within a conversation, untraceable across them. The thread author is marked `OP`. |
 | **One level of replies, sorted by most helpful** | Readable on phones; supportive answers rise first. |
-| **Upvotes and downvotes, except in Wellbeing** | Downvoting someone's struggle helps nobody, so Wellbeing only takes upvotes. |
+| **Upvotes and downvotes** | The community decides what rises. Repeating a vote takes it back. |
 | **No images or uploads** | Photos carry hidden location and device metadata. |
 | **Drafts stay on your device** | Unfinished posts never reach the server. |
 | **One verification per email per semester**; accounts last until the end of the next semester | One account per person, and membership stays current. |

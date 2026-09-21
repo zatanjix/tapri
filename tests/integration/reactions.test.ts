@@ -48,14 +48,14 @@ describe('ReactionService', () => {
 		expect(await reactions.vote(bob, 'reply', r.id, -1)).toEqual({ ok: true, vote: -1, upvotes: 0, downvotes: 1 });
 	});
 
-	it('does not allow downvotes in Wellbeing, on posts or replies', async () => {
+	it('allows downvotes in every category, including Wellbeing', async () => {
 		const w = await posts.createPost(alice, { category: 'wellbeing', kind: 'conversation', title: 'Rough week here', body: 'Hard.' });
 		if (!w.ok) throw new Error(w.error);
-		expect(await reactions.vote(bob, 'post', w.id, -1)).toEqual({ ok: false, error: 'not_allowed' });
-		expect((await reactions.vote(bob, 'post', w.id, 1)).ok).toBe(true);
+		expect(await reactions.vote(bob, 'post', w.id, -1)).toEqual({ ok: true, vote: -1, upvotes: 0, downvotes: 1 });
 		const r = await posts.createReply(alice, w.id, { body: 'thanks all' });
 		if (!r.ok) throw new Error(r.error);
-		expect(await reactions.vote(bob, 'reply', r.id, -1)).toEqual({ ok: false, error: 'not_allowed' });
+		expect(await reactions.vote(bob, 'reply', r.id, -1)).toEqual({ ok: true, vote: -1, upvotes: 0, downvotes: 1 });
+		expect((await posts.getThread(bob, w.id))?.post.canDownvote).toBe(true);
 	});
 
 	it('toggles "affects me too" and counts across accounts', async () => {

@@ -5,8 +5,8 @@ export type TargetType = 'post' | 'reply';
 export type ToggleResult = Result<{ active: boolean; count: number }, 'not_found'>;
 export type VoteResult = Result<{ vote: -1 | 0 | 1; upvotes: number; downvotes: number }, 'not_found' | 'not_allowed'>;
 
-/** Downvoting someone's struggle helps nobody, so Wellbeing threads only take upvotes. */
-export const NO_DOWNVOTES = ['wellbeing'];
+/** Categories where only upvotes are allowed. Currently none; add a slug to restrict one. */
+export const NO_DOWNVOTES: string[] = [];
 
 export class ReactionService {
 	constructor(private sql: Sql) {}
