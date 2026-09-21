@@ -73,6 +73,7 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 - **Pending verifications are short-lived.** They hold only hashed values and are deleted when used or after 10 minutes.
 - **Recovery keys and sessions are stored only as SHA-256 hashes.**
 - **Minimal timestamps.** They exist only where a feature needs one.
+- **Searches aren't recorded.** They're sent in the request body, never in the address, and never stored.
 - **Outbound links carry no referrer.**
 
 Tests enforce this:
@@ -119,6 +120,7 @@ Browser ──HTTPS──▶ Vercel (SvelteKit on Node, TypeScript)
 | `GET /api/categories` | Categories |
 | `GET /api/feed?tab=&sort=&category=&page=` | Feed. Tabs: `all`, `conversations`, `grievances`, `unanswered`. Sorts: `hot`, `new`, `affected` |
 | `GET /api/feed/most-affected` | Most affected grievances this week |
+| `POST /api/search` | Full-text search over posts (`q`, optional `page`). A POST so search words never appear in URLs or request logs. |
 | `POST /api/posts` | New post (`category`, `kind`, `title`, `body`) |
 | `GET` / `DELETE /api/posts/:id` | Thread with replies / delete your own post |
 | `POST /api/posts/:id/replies` | Reply (`body`, optional `parentId`) |

@@ -32,11 +32,28 @@ describe('downvote migration on existing data', () => {
 			select id, ${acct.id}, 'grievance', 'Existing post', 'Body', 1 from categories where slug = 'academics' returning id`;
 		await sql`insert into votes (account_id, target_type, target_id) values (${acct.id}, 'post', ${post.id})`;
 
-		expect(await migrate(sql)).toEqual(['006_downvotes.sql']);
+		const stepDir = await mkdtemp(join(tmpdir(), 'tapri-mig6-'));
+		for (const f of (await readdir('migrations')).filter((f) => f < '007')) await cp(join('migrations', f), join(stepDir, f));
+		expect(await migrate(sql, stepDir)).toEqual(['006_downvotes.sql']);
+		await rm(stepDir, { recursive: true, force: true });
 
 		const [vote] = await sql`select value from votes`;
 		const [p] = await sql`select upvotes, downvotes, title from posts`;
 		expect(vote.value).toBe(1);
 		expect(p).toEqual({ upvotes: 1, downvotes: 0, title: 'Existing post' });
+	});
+});
+
+describe('search migration on existing data', () => {
+	it('indexes posts that already exist', async () => {
+		const [acct] = await sql`insert into accounts (secret_hash, valid_until) values (${randomBytes(32)}, '2099-01-01') returning id`;
+		await sql`
+			insert into posts (category_id, account_id, kind, title, body)
+			select id, ${acct.id}, 'grievance', 'Mess food complaints', 'The dal is watery every day' from categories where slug = 'hostel-mess'`;
+		const before = (await readdir('migrations')).filter((f) => f < '007');
+		expect(before.length).toBeGreaterThan(0);
+		expect(await migrate(sql)).toEqual(['007_search.sql']);
+		const hits = await sql`select title from posts where search @@ websearch_to_tsquery('english', 'complaint')`;
+		expect(hits.map((h) => h.title)).toContain('Mess food complaints');
 	});
 });

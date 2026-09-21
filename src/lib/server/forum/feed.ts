@@ -14,6 +14,14 @@ export interface FeedQuery {
 }
 
 export const PAGE_SIZE = 20;
+
+/** Invisible markers around matched words; the interface turns them into highlights (no HTML involved). */
+export const HIT_START = '\u0001';
+export const HIT_END = '\u0002';
+const QUERY_MIN = 2;
+const QUERY_MAX = 200;
+
+export type SearchResult = FeedItem & { titleMarked: string; excerptMarked: string };
 export const MAX_PAGE = 25;
 
 const excerpt = (body: string) => {
@@ -52,6 +60,25 @@ export class FeedService {
 			order by ${order}
 			limit ${PAGE_SIZE} offset ${(page - 1) * PAGE_SIZE}`;
 		return rows.map((r) => this.item(r));
+	}
+
+	/** Full-text search over published posts, most relevant first. The query is never stored. */
+	async search(raw: string, page = 1): Promise<SearchResult[]> {
+		const q = raw.trim();
+		if (q.length < QUERY_MIN || q.length > QUERY_MAX) return [];
+		const { sql } = this.deps;
+		const offset = (Math.min(Math.max(1, Math.floor(page)), MAX_PAGE) - 1) * PAGE_SIZE;
+		const marks = `StartSel=${HIT_START}, StopSel=${HIT_END}`;
+		const rows = await sql`
+			with query as (select websearch_to_tsquery('english', ${q}) as tsq)
+			select p.*, c.slug, c.name,
+			       ts_headline('english', p.title, query.tsq, ${`${marks}, HighlightAll=true`}) as title_marked,
+			       ts_headline('english', p.body, query.tsq, ${`${marks}, MaxWords=30, MinWords=12, MaxFragments=2, FragmentDelimiter=" … "`}) as excerpt_marked
+			from posts p join categories c on c.id = p.category_id, query
+			where p.status = 'published' and numnode(query.tsq) > 0 and p.search @@ query.tsq
+			order by ts_rank(p.search, query.tsq) desc, p.published_on desc
+			limit ${PAGE_SIZE} offset ${offset}`;
+		return rows.map((r) => ({ ...this.item(r), titleMarked: r.title_marked, excerptMarked: r.excerpt_marked }));
 	}
 
 	async mostAffected(days = 7, limit = 5): Promise<FeedItem[]> {
