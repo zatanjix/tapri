@@ -78,3 +78,13 @@ describe('FeedService.search', () => {
 		for (const a of accounts) expect(json).not.toContain(a.id);
 	});
 });
+
+describe('FeedService.search sort orders', () => {
+	it('can order matches by time instead of relevance', async () => {
+		const older = await post('Hostel water issue', 'water water water');
+		const newer = await post('Water again', 'still no water');
+		await sql`update posts set published_on = now() - interval '2 days' where id = ${older}`;
+		expect((await feed.search('water', 1, 'new')).map((r) => r.id)).toEqual([newer, older]);
+		expect((await feed.search('water', 1, 'old')).map((r) => r.id)).toEqual([older, newer]);
+	});
+});

@@ -119,9 +119,9 @@ Browser ──HTTPS──▶ Vercel (SvelteKit on Node, TypeScript)
 | `POST /api/account/renew` | Fresh ticket → extends your account |
 | `POST` / `DELETE /api/session` | Sign in with a recovery key / sign out |
 | `GET /api/categories` | Categories |
-| `GET /api/feed?tab=&sort=&category=&page=` | Feed. Tabs: `all`, `conversations`, `grievances`, `unanswered`. Sorts: `hot`, `new`, `affected` |
+| `GET /api/feed?tab=&sort=&category=&page=` | Feed. Tabs: `all`, `conversations`, `grievances`, `unanswered`. Sorts: `hot` (most relevant, default), `new`, `old`, `top`, `affected` |
 | `GET /api/feed/most-affected` | Most affected grievances this week |
-| `POST /api/search` | Full-text search over posts (`q`, optional `page`). A POST so search words never appear in URLs or request logs. |
+| `POST /api/search` | Full-text search over posts (`q`, optional `page`, optional `sort`: `relevance`, `new`, `old`). A POST so search words never appear in URLs or request logs. |
 | `POST /api/posts` | New post (`category`, `kind`, `title`, `body`) |
 | `GET` / `DELETE /api/posts/:id` | Thread with replies / delete your own post |
 | `POST /api/posts/:id/replies` | Reply (`body`, optional `parentId`) |

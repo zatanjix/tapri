@@ -8,5 +8,6 @@ export async function POST({ locals, request }) {
 	const body = await readJson(request);
 	if (typeof body?.q !== 'string') return fail('bad_request');
 	const page = typeof body.page === 'number' ? body.page : 1;
-	return json({ items: await (await getApp()).feed.search(body.q, page) });
+	const sort = body.sort === 'new' || body.sort === 'old' ? body.sort : 'relevance';
+	return json({ items: await (await getApp()).feed.search(body.q, page, sort) });
 }

@@ -93,3 +93,17 @@ describe('FeedService', () => {
 		expect(await feed.list({ tab: 'all', sort: 'new', page: 2 })).toHaveLength(5);
 	});
 });
+
+describe('FeedService sort orders', () => {
+	it('sorts oldest first and by top score', async () => {
+		const first = await post('First post ever');
+		const second = await post('Second post here');
+		const third = await post('Third post later');
+		await sql`update posts set published_on = now() - interval '3 hours' where id = ${first}`;
+		await sql`update posts set published_on = now() - interval '2 hours', upvotes = 5, downvotes = 1 where id = ${second}`;
+		await sql`update posts set published_on = now() - interval '1 hour', upvotes = 2 where id = ${third}`;
+		expect((await feed.list({ tab: 'all', sort: 'old' })).map((i) => i.id)).toEqual([first, second, third]);
+		expect((await feed.list({ tab: 'all', sort: 'new' })).map((i) => i.id)).toEqual([third, second, first]);
+		expect((await feed.list({ tab: 'all', sort: 'top' })).map((i) => i.id)).toEqual([second, third, first]);
+	});
+});

@@ -4,7 +4,7 @@ import type { FeedSort, FeedTab } from '$lib/server/forum/feed';
 import { fail, requireAccount } from '$lib/server/http';
 
 const TABS: FeedTab[] = ['all', 'conversations', 'grievances', 'unanswered'];
-const SORTS: FeedSort[] = ['hot', 'new', 'affected'];
+const SORTS: FeedSort[] = ['hot', 'new', 'old', 'top', 'affected'];
 
 export async function GET({ locals, url }) {
 	if (!requireAccount(locals)) return fail('unauthorized');

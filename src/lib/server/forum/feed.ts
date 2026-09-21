@@ -5,7 +5,8 @@ import { OFFICIAL_HANDLE } from './posts';
 import { LIMITS, type FeedItem } from './types';
 
 export type FeedTab = 'all' | 'conversations' | 'grievances' | 'unanswered';
-export type FeedSort = 'hot' | 'new' | 'affected';
+export type FeedSort = 'hot' | 'new' | 'old' | 'top' | 'affected';
+export type SearchSort = 'relevance' | 'new' | 'old';
 
 export interface FeedQuery {
 	tab: FeedTab;
@@ -50,6 +51,8 @@ export class FeedService {
 		const category = q.category ? sql`and c.slug = ${q.category}` : sql``;
 		const order = {
 			new: sql`p.published_on desc, p.id desc`,
+			old: sql`p.published_on asc, p.id asc`,
+			top: sql`p.upvotes - p.downvotes desc, p.published_on desc`,
 			affected: sql`p.metoo desc, p.published_on desc`,
 			hot: sql`greatest(p.upvotes - p.downvotes + 2 * p.metoo + 1, 0)::float
 				/ power(extract(epoch from now() - p.published_on) / 3600 + 2, 1.5) desc, p.id desc`
@@ -64,7 +67,7 @@ export class FeedService {
 	}
 
 	/** Full-text search over published posts, most relevant first. The query is never stored. */
-	async search(raw: string, page = 1): Promise<SearchResult[]> {
+	async search(raw: string, page = 1, sort: SearchSort = 'relevance'): Promise<SearchResult[]> {
 		const q = raw.trim();
 		if (q.length < QUERY_MIN || q.length > QUERY_MAX) return [];
 		const { sql } = this.deps;
@@ -77,7 +80,13 @@ export class FeedService {
 			       ts_headline('english', p.body, query.tsq, ${`${marks}, MaxWords=30, MinWords=12, MaxFragments=2, FragmentDelimiter=" … "`}) as excerpt_marked
 			from posts p join categories c on c.id = p.category_id, query
 			where p.status = 'published' and numnode(query.tsq) > 0 and p.search @@ query.tsq
-			order by ts_rank(p.search, query.tsq) desc, p.published_on desc
+			order by ${
+				sort === 'new'
+					? sql`p.published_on desc`
+					: sort === 'old'
+						? sql`p.published_on asc`
+						: sql`ts_rank(p.search, query.tsq) desc, p.published_on desc`
+			}
 			limit ${PAGE_SIZE} offset ${offset}`;
 		return rows.map((r) => ({ ...this.item(r), titleMarked: r.title_marked, excerptMarked: r.excerpt_marked }));
 	}

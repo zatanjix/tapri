@@ -10,6 +10,7 @@
 
 	let query = $state('');
 	let searched = $state('');
+	let sort = $state<'relevance' | 'new' | 'old'>('relevance');
 	let results = $state<SearchResult[]>([]);
 	let page = $state(1);
 	let busy = $state(false);
@@ -18,7 +19,7 @@
 	async function run(q: string, p = 1) {
 		busy = true;
 		error = '';
-		const r = await api<{ items: SearchResult[] }>('/api/search', { body: { q, page: p } });
+		const r = await api<{ items: SearchResult[] }>('/api/search', { body: { q, page: p, sort } });
 		busy = false;
 		if (!r.ok) {
 			error = "Search isn't working right now. Please try again.";
@@ -51,6 +52,14 @@
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 
 	{#if searched}
+		<div class="sortrow">
+			<label for="ssort">Sort</label>
+			<select id="ssort" bind:value={sort} onchange={() => run(searched)}>
+				<option value="relevance">Most relevant</option>
+				<option value="new">Latest first</option>
+				<option value="old">Oldest first</option>
+			</select>
+		</div>
 		<p class="count muted">
 			{#if results.length}{results.length}{results.length % 20 === 0 ? '+' : ''} result{results.length === 1 ? '' : 's'} for “{searched}”{:else}Nothing found for “{searched}”. Try fewer or different words.{/if}
 		</p>
@@ -84,6 +93,23 @@
 	.tips {
 		font-size: 12.5px;
 		margin: -4px 0 14px;
+	}
+	.sortrow {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 12.5px;
+		color: var(--muted);
+		margin: 0 0 8px;
+	}
+	.sortrow select {
+		border: 1px solid var(--border);
+		background: var(--bg);
+		border-radius: 8px;
+		padding: 5px 8px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--ink);
 	}
 	.count {
 		font-size: 13px;

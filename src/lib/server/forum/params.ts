@@ -8,8 +8,10 @@ export const TABS: { id: FeedTab; label: string }[] = [
 ];
 
 export const SORTS: { id: FeedSort; label: string }[] = [
-	{ id: 'hot', label: 'Active' },
-	{ id: 'new', label: 'New' },
+	{ id: 'hot', label: 'Most relevant' },
+	{ id: 'new', label: 'Latest first' },
+	{ id: 'old', label: 'Oldest first' },
+	{ id: 'top', label: 'Top voted' },
 	{ id: 'affected', label: 'Most affected' }
 ];
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import type { FeedSort, FeedTab } from '$lib/server/forum/feed';
 	import type { FeedItem } from '$lib/server/forum/types';
 	import FeedRow from './FeedRow.svelte';
@@ -44,16 +45,17 @@
 	{/each}
 </nav>
 
-<div class="sorts" aria-label="Sort">
-	{#each sorts as s (s.id)}
-		<a href={href({ sort: s.id })} aria-current={s.id === sort ? 'true' : undefined}>{s.label}</a>
-	{/each}
+<div class="sorts">
+	<label for="sort">Sort</label>
+	<select id="sort" value={sort} onchange={(e) => goto(href({ sort: e.currentTarget.value as FeedSort }))}>
+		{#each sorts as s (s.id)}<option value={s.id}>{s.label}</option>{/each}
+	</select>
 </div>
 
 {#if items.length}
 	{#each items as item (item.id)}<FeedRow {item} />{/each}
 	{#if items.length === 20}
-		<a class="more" href={href({ page: page + 1 })}>Older posts</a>
+		<a class="more" href={href({ page: page + 1 })}>More posts</a>
 	{/if}
 {:else}
 	<p class="empty">{EMPTY[tab]} <a href="/new">Create a post</a></p>
@@ -81,17 +83,20 @@
 	}
 	.sorts {
 		display: flex;
-		gap: 14px;
+		align-items: center;
+		gap: 8px;
 		font-size: 12.5px;
+		color: var(--muted);
 		padding: 10px 0 2px;
 	}
-	.sorts a {
-		color: var(--muted);
-		text-decoration: none;
-	}
-	.sorts a[aria-current='true'] {
+	.sorts select {
+		border: 1px solid var(--border);
+		background: var(--bg);
+		border-radius: 8px;
+		padding: 5px 8px;
+		font-size: 13px;
+		font-weight: 600;
 		color: var(--ink);
-		font-weight: 700;
 	}
 	.more {
 		display: block;
