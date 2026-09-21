@@ -50,10 +50,23 @@ describe('search migration on existing data', () => {
 		await sql`
 			insert into posts (category_id, account_id, kind, title, body)
 			select id, ${acct.id}, 'grievance', 'Mess food complaints', 'The dal is watery every day' from categories where slug = 'hostel-mess'`;
-		const before = (await readdir('migrations')).filter((f) => f < '007');
-		expect(before.length).toBeGreaterThan(0);
-		expect(await migrate(sql)).toEqual(['007_search.sql']);
+		const stepDir = await mkdtemp(join(tmpdir(), 'tapri-mig7-'));
+		for (const f of (await readdir('migrations')).filter((f) => f < '008')) await cp(join('migrations', f), join(stepDir, f));
+		expect(await migrate(sql, stepDir)).toEqual(['007_search.sql']);
+		await rm(stepDir, { recursive: true, force: true });
 		const hits = await sql`select title from posts where search @@ websearch_to_tsquery('english', 'complaint')`;
 		expect(hits.map((h) => h.title)).toContain('Mess food complaints');
+	});
+});
+
+describe('official-posts migration on existing data', () => {
+	it('marks every existing post and reply as not official, and adds a system account', async () => {
+		expect(await migrate(sql)).toContain('008_official.sql');
+		const official = await sql`select count(*)::int as n from posts where official`;
+		const total = await sql`select count(*)::int as n from posts`;
+		expect(official[0].n).toBe(0);
+		expect(total[0].n).toBeGreaterThan(0);
+		const [system] = await sql`select status, valid_until::text as v from accounts where id = '00000000-0000-0000-0000-000000000001'`;
+		expect(system).toEqual({ status: 'active', v: '9999-12-31' });
 	});
 });

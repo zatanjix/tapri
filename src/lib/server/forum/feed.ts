@@ -1,6 +1,7 @@
 import type { Sql } from '../db';
 import { showsDistress } from '../../shared/distress';
 import { baseHandle } from './handles';
+import { OFFICIAL_HANDLE } from './posts';
 import { LIMITS, type FeedItem } from './types';
 
 export type FeedTab = 'all' | 'conversations' | 'grievances' | 'unanswered';
@@ -98,12 +99,13 @@ export class FeedService {
 			kind: r.kind,
 			title: r.title,
 			excerpt: excerpt(r.body),
-			handle: baseHandle(this.deps.handleKey, r.account_id, r.id),
+			handle: r.official ? OFFICIAL_HANDLE : baseHandle(this.deps.handleKey, r.account_id, r.id),
 			publishedOn: new Date(r.published_on).toISOString(),
 			upvotes: r.upvotes,
 			metoo: r.metoo,
 			replyCount: r.reply_count,
-			distress: showsDistress(`${r.title}\n${r.body}`)
+			distress: showsDistress(`${r.title}\n${r.body}`),
+			official: r.official
 		};
 	}
 }

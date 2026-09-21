@@ -60,6 +60,7 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 | **A new random name in every thread** | Consistent within a conversation, untraceable across them. The thread author is marked `OP`. |
 | **One level of replies, sorted by most helpful** | Readable on phones; supportive answers rise first. |
 | **Upvotes and downvotes** | The community decides what rises. Repeating a vote takes it back. |
+| **Official posts carry a ✓ Official badge** | Announcements come from a separate **Tapri** identity that nobody can sign in as, so no one can impersonate the people running it, and official posts are never linked to anyone's own account. |
 | **No images or uploads** | Photos carry hidden location and device metadata. |
 | **Drafts stay on your device** | Unfinished posts never reach the server. |
 | **One verification per email per semester**; accounts last until the end of the next semester | One account per person, and membership stays current. |

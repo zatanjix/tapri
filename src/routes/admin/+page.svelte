@@ -26,6 +26,30 @@
 			<button class="btn block">Continue</button>
 		</form>
 	{:else}
+		<section class="official">
+			<h2 class="sec-h">Post as Tapri</h2>
+			<p class="muted small">Appears as <b>Tapri</b> with the ✓ Official badge. Not linked to your own account.</p>
+			<form method="POST" action="?/officialPost">
+				<select name="category" class="field" required>
+					{#each data.categories as c (c.slug)}<option value={c.slug} selected={c.slug === 'feedback'}>{c.name}</option>{/each}
+				</select>
+				<input name="title" class="field" placeholder="Title" minlength="5" maxlength="150" required />
+				<textarea name="body" class="field" rows="4" placeholder="What do you want to say?" maxlength="10000" required></textarea>
+				{#if form?.officialError}<p class="error">Couldn't post: {form.officialError}</p>{/if}
+				{#if form?.posted}<p class="ok">Posted. <a href="/p/{form.posted}">View it</a></p>{/if}
+				<button class="btn">Post as Tapri</button>
+			</form>
+
+			<h2 class="sec-h">Reply as Tapri</h2>
+			<form method="POST" action="?/officialReply">
+				<input name="postId" class="field" inputmode="numeric" placeholder="Post number (the #123 on the thread)" required />
+				<textarea name="body" class="field" rows="3" placeholder="Reply" maxlength="5000" required></textarea>
+				{#if form?.replyError}<p class="error">Couldn't reply: {form.replyError}</p>{/if}
+				{#if form?.replied}<p class="ok">Replied. <a href="/p/{form.replied}">View thread</a></p>{/if}
+				<button class="btn">Reply as Tapri</button>
+			</form>
+		</section>
+
 		<h1>Reports <span class="count">{data.reports.length} open</span></h1>
 		{#if data.reports.length === 0}
 			<p class="muted empty">Nothing reported. Check back later.</p>
@@ -79,6 +103,42 @@
 		font-size: 13px;
 		font-weight: 600;
 		color: var(--muted);
+	}
+	.official {
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		padding: 14px 15px 16px;
+		margin-bottom: 26px;
+	}
+	.official form {
+		display: grid;
+		gap: 8px;
+		margin-bottom: 18px;
+	}
+	.official form:last-child {
+		margin-bottom: 0;
+	}
+	.official .btn {
+		justify-self: start;
+		padding: 8px 14px;
+		font-size: 13px;
+	}
+	.sec-h {
+		font-size: 15px;
+		font-weight: 800;
+		margin: 0 0 4px;
+	}
+	.small {
+		font-size: 12.5px;
+		margin: 0 0 10px;
+	}
+	.ok {
+		font-size: 13px;
+		font-weight: 600;
+		margin: 0;
+	}
+	textarea.field {
+		resize: vertical;
 	}
 	.empty {
 		padding: 28px 0;

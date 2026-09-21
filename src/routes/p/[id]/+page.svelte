@@ -3,6 +3,7 @@
 	import { api } from '$lib/client/api';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import HelpNote from '$lib/components/HelpNote.svelte';
+	import OfficialBadge from '$lib/components/OfficialBadge.svelte';
 	import Reply from '$lib/components/Reply.svelte';
 	import ReplyBox from '$lib/components/ReplyBox.svelte';
 	import ReportButton from '$lib/components/ReportButton.svelte';
@@ -54,7 +55,7 @@
 		<div class="crumb"><a href="/c/{post.category.slug}">{post.category.name}</a> / <span class="mono">#{post.id}</span></div>
 		<div class="who">
 			<Avatar handle={post.handle} />
-			<span><b>{post.handle}</b>{#if post.mine} <span class="you">you</span>{/if} · {timeAgo(post.publishedOn)}</span>
+			<span><b>{post.handle}</b>{#if post.official} <OfficialBadge />{/if}{#if post.mine} <span class="you">you</span>{/if} · {timeAgo(post.publishedOn)}</span>
 		</div>
 		<h1>{post.title}</h1>
 		<div class="body">{post.body}</div>

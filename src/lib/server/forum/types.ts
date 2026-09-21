@@ -32,6 +32,7 @@ export interface PostView {
 	metooed: boolean;
 	mine: boolean;
 	distress: boolean;
+	official: boolean;
 }
 
 export interface ReplyView {
@@ -47,6 +48,7 @@ export interface ReplyView {
 	myVote: -1 | 0 | 1;
 	mine: boolean;
 	distress: boolean;
+	official: boolean;
 	children: ReplyView[];
 }
 
@@ -68,6 +70,7 @@ export interface FeedItem {
 	metoo: number;
 	replyCount: number;
 	distress: boolean;
+	official: boolean;
 }
 
 export type Result<T, E extends string> = ({ ok: true } & T) | { ok: false; error: E };

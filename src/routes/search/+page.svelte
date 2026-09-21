@@ -3,6 +3,7 @@
 	import { api } from '$lib/client/api';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import Marked from '$lib/components/Marked.svelte';
+	import OfficialBadge from '$lib/components/OfficialBadge.svelte';
 	import SearchBox from '$lib/components/SearchBox.svelte';
 	import type { SearchResult } from '$lib/server/forum/feed';
 	import { timeAgo } from '$lib/shared/time';
@@ -59,7 +60,7 @@
 		<article class="row">
 			<Avatar handle={item.handle} />
 			<div class="main">
-				<div class="who"><b>{item.handle}</b> · {item.category.name} · {timeAgo(item.publishedOn)}</div>
+				<div class="who"><b>{item.handle}</b>{#if item.official} <OfficialBadge />{/if} · {item.category.name} · {timeAgo(item.publishedOn)}</div>
 				<h3><a href="/p/{item.id}"><Marked text={item.titleMarked} /></a></h3>
 				<p class="ex"><Marked text={item.excerptMarked} /></p>
 				<div class="st">

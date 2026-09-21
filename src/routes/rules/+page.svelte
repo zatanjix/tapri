@@ -46,6 +46,13 @@
 		<a href="tel:{QUICK.hospital.tel}">{QUICK.hospital.phone}</a>. You don't have to handle it alone either.
 	</p>
 
+	<h2>Anyone claiming to be the developer</h2>
+	<p>
+		Announcements and replies from the people who run Tapri always appear as <b>Tapri</b> with an
+		<b>✓ Official</b> badge. No one else can get that badge. A post from an animal name saying it's
+		the developer isn't.
+	</p>
+
 	<h2>Ideas and complaints about Tapri</h2>
 	<p>
 		Post them in <a href="/c/feedback">Feedback</a>. It's read, and other people can add to it.

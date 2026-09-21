@@ -2,6 +2,7 @@
 	import type { FeedItem } from '$lib/server/forum/types';
 	import { timeAgo } from '$lib/shared/time';
 	import Avatar from './Avatar.svelte';
+	import OfficialBadge from './OfficialBadge.svelte';
 
 	let { item }: { item: FeedItem } = $props();
 
@@ -12,7 +13,7 @@
 <article class="row">
 	<Avatar handle={item.handle} />
 	<div class="main">
-		<div class="who"><b>{item.handle}</b> · {item.category.name} · {timeAgo(item.publishedOn)}</div>
+		<div class="who"><b>{item.handle}</b>{#if item.official} <OfficialBadge />{/if} · {item.category.name} · {timeAgo(item.publishedOn)}</div>
 		<h3><a href="/p/{item.id}">{item.title}</a></h3>
 		<p class="ex">{item.excerpt}</p>
 		<div class="st">

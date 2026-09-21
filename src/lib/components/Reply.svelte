@@ -4,6 +4,7 @@
 	import { timeAgo } from '$lib/shared/time';
 	import Avatar from './Avatar.svelte';
 	import HelpNote from './HelpNote.svelte';
+	import OfficialBadge from './OfficialBadge.svelte';
 	import Reply from './Reply.svelte';
 	import ReplyBox from './ReplyBox.svelte';
 	import ReportButton from './ReportButton.svelte';
@@ -33,6 +34,7 @@
 		{#if reply.status === 'published'}
 			<div class="meta">
 				<b>{reply.handle}</b>
+				{#if reply.official}<OfficialBadge />{/if}
 				{#if reply.isOp}<span class="op">OP</span>{/if}
 				{#if reply.mine}<span class="you">you</span>{/if}
 				· {timeAgo(reply.publishedOn)}

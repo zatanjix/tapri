@@ -15,8 +15,9 @@ const signedIn = (cookies: { get(name: string): string | undefined }) =>
 	cookies.get(ADMIN_COOKIE) === adminToken(passphrase());
 
 export async function load({ cookies }) {
-	if (!signedIn(cookies)) return { unlocked: false, reports: [] };
-	return { unlocked: true, reports: await (await getApp()).reports.open() };
+	if (!signedIn(cookies)) return { unlocked: false, reports: [], categories: [] };
+	const app = await getApp();
+	return { unlocked: true, reports: await app.reports.open(), categories: await app.feed.categories() };
 }
 
 function target(form: FormData): { type: TargetType; id: number } | null {
@@ -46,6 +47,26 @@ export const actions = {
 		if (!t) return fail(400, { badRequest: true });
 		await (await getApp()).reports.remove(t.type, t.id);
 		return { removed: true };
+	},
+
+	officialPost: async ({ request, cookies }) => {
+		if (!signedIn(cookies)) return fail(401, { wrong: true });
+		const form = await request.formData();
+		const result = await (await getApp()).posts.createOfficialPost({
+			category: String(form.get('category') ?? ''),
+			title: String(form.get('title') ?? ''),
+			body: String(form.get('body') ?? '')
+		});
+		return result.ok ? { posted: result.id } : fail(400, { officialError: result.error });
+	},
+
+	officialReply: async ({ request, cookies }) => {
+		if (!signedIn(cookies)) return fail(401, { wrong: true });
+		const form = await request.formData();
+		const postId = Number(form.get('postId'));
+		if (!Number.isSafeInteger(postId) || postId < 1) return fail(400, { replyError: 'not_found' });
+		const result = await (await getApp()).posts.createOfficialReply(postId, { body: String(form.get('body') ?? '') });
+		return result.ok ? { replied: postId } : fail(400, { replyError: result.error });
 	},
 
 	dismiss: async ({ request, cookies }) => {
