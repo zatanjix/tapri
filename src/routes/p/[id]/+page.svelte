@@ -7,18 +7,17 @@
 	import ReplyBox from '$lib/components/ReplyBox.svelte';
 	import ReportButton from '$lib/components/ReportButton.svelte';
 	import SupportBox from '$lib/components/SupportBox.svelte';
+	import VoteControl from '$lib/components/VoteControl.svelte';
 	import { timeAgo } from '$lib/shared/time';
 
 	let { data } = $props();
 	const post = $derived(data.thread.post);
 
 	let metoo = $state({ active: false, count: 0 });
-	let vote = $state({ active: false, count: 0 });
 	let copied = $state(false);
 
 	$effect.pre(() => {
 		metoo = { active: post.metooed, count: post.metoo };
-		vote = { active: post.voted, count: post.upvotes };
 	});
 
 	const metooLabel = $derived(
@@ -30,10 +29,6 @@
 		if (r.ok) metoo = r.data;
 	}
 
-	async function toggleVote() {
-		const r = await api<{ active: boolean; count: number }>('/api/vote', { body: { targetType: 'post', targetId: post.id } });
-		if (r.ok) vote = r.data;
-	}
 
 	async function copyLink() {
 		await navigator.clipboard.writeText(location.href);
@@ -68,7 +63,7 @@
 			<button class="feel" class:on={metoo.active} aria-pressed={metoo.active} onclick={toggleMetoo}>
 				{metooLabel} <span class="n">{metoo.count}</span>
 			</button>
-			<button class="sec" class:on={vote.active} aria-pressed={vote.active} onclick={toggleVote}>▲ {vote.count}</button>
+			<VoteControl targetType="post" targetId={post.id} upvotes={post.upvotes} downvotes={post.downvotes} myVote={post.myVote} canDownvote={post.canDownvote} />
 			<button class="sec" onclick={copyLink}>{copied ? 'Copied' : 'Copy link'}</button>
 			{#if post.mine}<button class="ghost" onclick={remove}>Delete</button>{:else}<ReportButton targetType="post" targetId={post.id} />{/if}
 		</div>
@@ -83,7 +78,7 @@
 		</div>
 
 		{#each data.thread.replies as reply (reply.id)}
-			<Reply {reply} postId={post.id} viewerHandle={data.thread.viewerHandle} onchange={refresh} />
+			<Reply {reply} postId={post.id} viewerHandle={data.thread.viewerHandle} canDownvote={post.canDownvote} onchange={refresh} />
 		{/each}
 
 		<div class="compose">
@@ -185,9 +180,6 @@
 	}
 	.sec {
 		border: 1px solid var(--border);
-	}
-	.sec.on {
-		border-color: var(--ink);
 	}
 	.ghost {
 		border: 0;

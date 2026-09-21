@@ -3,55 +3,67 @@ import type { Result } from './types';
 
 export type TargetType = 'post' | 'reply';
 export type ToggleResult = Result<{ active: boolean; count: number }, 'not_found'>;
+export type VoteResult = Result<{ vote: -1 | 0 | 1; upvotes: number; downvotes: number }, 'not_found' | 'not_allowed'>;
 
-const TABLE: Record<TargetType, string> = { post: 'posts', reply: 'replies' };
+/** Downvoting someone's struggle helps nobody, so Wellbeing threads only take upvotes. */
+export const NO_DOWNVOTES = ['wellbeing'];
 
 export class ReactionService {
 	constructor(private sql: Sql) {}
 
-	toggleVote(accountId: string, targetType: TargetType, targetId: number): Promise<ToggleResult> {
-		return this.toggle({
-			table: TABLE[targetType],
-			column: 'upvotes',
-			targetId,
-			add: (tx) => tx`insert into votes (account_id, target_type, target_id)
-				values (${accountId}, ${targetType}, ${targetId}) on conflict do nothing returning 1`,
-			remove: (tx) => tx`delete from votes
-				where account_id = ${accountId} and target_type = ${targetType} and target_id = ${targetId}`
-		});
-	}
-
-	toggleMetoo(accountId: string, postId: number): Promise<ToggleResult> {
-		return this.toggle({
-			table: 'posts',
-			column: 'metoo',
-			targetId: postId,
-			add: (tx) => tx`insert into metoos (account_id, post_id)
-				values (${accountId}, ${postId}) on conflict do nothing returning 1`,
-			remove: (tx) => tx`delete from metoos where account_id = ${accountId} and post_id = ${postId}`
-		});
-	}
-
-	/** Adds the reaction, or removes it if it already exists, and keeps the counter in step. */
-	private async toggle(o: {
-		table: string;
-		column: 'upvotes' | 'metoo';
-		targetId: number;
-		add: (tx: Sql) => PromiseLike<ArrayLike<unknown>>;
-		remove: (tx: Sql) => Promise<unknown>;
-	}): Promise<ToggleResult> {
-		const { sql } = this;
-		return sql.begin(async (tx0) => {
+	/**
+	 * Casting the same vote again takes it back; casting the opposite one switches it.
+	 * The counters on the post or reply are kept in step inside the same transaction.
+	 */
+	vote(accountId: string, targetType: TargetType, targetId: number, value: 1 | -1): Promise<VoteResult> {
+		return this.sql.begin(async (tx0) => {
 			const tx = tx0 as unknown as Sql;
-			const [target] = await tx`
-				select 1 from ${sql(o.table)} where id = ${o.targetId} and status = 'published' for update`;
+			const [target] =
+				targetType === 'post'
+					? await tx`
+						select c.slug from posts p join categories c on c.id = p.category_id
+						where p.id = ${targetId} and p.status = 'published' for update of p`
+					: await tx`
+						select c.slug from replies r join posts p on p.id = r.post_id join categories c on c.id = p.category_id
+						where r.id = ${targetId} and r.status = 'published' for update of r`;
+			if (!target) return { ok: false, error: 'not_found' } as const;
+			if (value === -1 && NO_DOWNVOTES.includes(target.slug)) return { ok: false, error: 'not_allowed' } as const;
+
+			const [existing] = await tx`
+				select value from votes where account_id = ${accountId} and target_type = ${targetType} and target_id = ${targetId}`;
+			const before: -1 | 0 | 1 = existing ? existing.value : 0;
+			const after: -1 | 0 | 1 = before === value ? 0 : value;
+
+			if (after === 0) {
+				await tx`delete from votes where account_id = ${accountId} and target_type = ${targetType} and target_id = ${targetId}`;
+			} else if (before === 0) {
+				await tx`insert into votes (account_id, target_type, target_id, value) values (${accountId}, ${targetType}, ${targetId}, ${after})`;
+			} else {
+				await tx`update votes set value = ${after} where account_id = ${accountId} and target_type = ${targetType} and target_id = ${targetId}`;
+			}
+
+			const up = (after === 1 ? 1 : 0) - (before === 1 ? 1 : 0);
+			const down = (after === -1 ? 1 : 0) - (before === -1 ? 1 : 0);
+			const table = targetType === 'post' ? 'posts' : 'replies';
+			const [row] = await tx`
+				update ${this.sql(table)} set upvotes = upvotes + ${up}, downvotes = downvotes + ${down}
+				where id = ${targetId} returning upvotes, downvotes`;
+			return { ok: true, vote: after, upvotes: row.upvotes, downvotes: row.downvotes } as const;
+		}) as Promise<VoteResult>;
+	}
+
+	/** Adds "affects me too", or removes it if already there, keeping the counter in step. */
+	toggleMetoo(accountId: string, postId: number): Promise<ToggleResult> {
+		return this.sql.begin(async (tx0) => {
+			const tx = tx0 as unknown as Sql;
+			const [target] = await tx`select 1 from posts where id = ${postId} and status = 'published' for update`;
 			if (!target) return { ok: false, error: 'not_found' } as const;
 
-			const added = (await o.add(tx)).length > 0;
-			if (!added) await o.remove(tx);
+			const added = (await tx`insert into metoos (account_id, post_id) values (${accountId}, ${postId})
+				on conflict do nothing returning 1`).length > 0;
+			if (!added) await tx`delete from metoos where account_id = ${accountId} and post_id = ${postId}`;
 			const [row] = await tx`
-				update ${sql(o.table)} set ${sql(o.column)} = ${sql(o.column)} + ${added ? 1 : -1}
-				where id = ${o.targetId} returning ${sql(o.column)} as count`;
+				update posts set metoo = metoo + ${added ? 1 : -1} where id = ${postId} returning metoo as count`;
 			return { ok: true, active: added, count: row.count as number } as const;
 		}) as Promise<ToggleResult>;
 	}

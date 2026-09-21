@@ -7,26 +7,18 @@
 	import Reply from './Reply.svelte';
 	import ReplyBox from './ReplyBox.svelte';
 	import ReportButton from './ReportButton.svelte';
+	import VoteControl from './VoteControl.svelte';
 
 	let {
 		reply,
 		postId,
 		viewerHandle,
+		canDownvote,
 		onchange
-	}: { reply: ReplyView; postId: number; viewerHandle: string; onchange: () => void } = $props();
+	}: { reply: ReplyView; postId: number; viewerHandle: string; canDownvote: boolean; onchange: () => void } = $props();
 
 	let replying = $state(false);
-	let voted = $state(false);
-	let upvotes = $state(0);
-	$effect.pre(() => {
-		voted = reply.voted;
-		upvotes = reply.upvotes;
-	});
 
-	async function vote() {
-		const r = await api<{ active: boolean; count: number }>('/api/vote', { body: { targetType: 'reply', targetId: reply.id } });
-		if (r.ok) ({ active: voted, count: upvotes } = r.data);
-	}
 
 	async function remove() {
 		if (!confirm('Delete this reply? This cannot be undone.')) return;
@@ -48,7 +40,7 @@
 			<p class="tx">{reply.body}</p>
 			{#if reply.distress}<div class="note"><HelpNote distress /></div>{/if}
 			<div class="acts">
-				<button class:on={voted} onclick={vote} aria-pressed={voted}>▲ {upvotes}</button>
+				<VoteControl targetType="reply" targetId={reply.id} upvotes={reply.upvotes} downvotes={reply.downvotes} myVote={reply.myVote} {canDownvote} compact />
 				{#if reply.parentId === null}<button onclick={() => (replying = !replying)}>Reply</button>{/if}
 				{#if reply.mine}<button onclick={remove}>Delete</button>{:else}<ReportButton targetType="reply" targetId={reply.id} />{/if}
 			</div>
@@ -59,7 +51,7 @@
 		{#if reply.children.length}
 			<div class="kids">
 				{#each reply.children as child (child.id)}
-					<Reply reply={child} {postId} {viewerHandle} {onchange} />
+					<Reply reply={child} {postId} {viewerHandle} {canDownvote} {onchange} />
 				{/each}
 			</div>
 		{/if}
@@ -146,8 +138,7 @@
 		font-weight: 700;
 		color: var(--muted);
 	}
-	.acts button:hover,
-	.acts button.on {
+	.acts button:hover {
 		color: var(--ink);
 	}
 	.kids {

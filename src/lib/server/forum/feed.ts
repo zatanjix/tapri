@@ -42,7 +42,7 @@ export class FeedService {
 		const order = {
 			new: sql`p.published_on desc, p.id desc`,
 			affected: sql`p.metoo desc, p.published_on desc`,
-			hot: sql`(p.upvotes + 2 * p.metoo + 1)::float
+			hot: sql`greatest(p.upvotes - p.downvotes + 2 * p.metoo + 1, 0)::float
 				/ power(extract(epoch from now() - p.published_on) / 3600 + 2, 1.5) desc, p.id desc`
 		}[q.sort];
 

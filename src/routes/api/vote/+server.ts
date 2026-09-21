@@ -10,8 +10,14 @@ export async function POST({ locals, request }) {
 	const body = await readJson(request);
 	const type = body?.targetType;
 	const id = body?.targetId;
+	// value is optional so pages loaded before downvotes existed keep working (they only upvote)
+	const value = body?.value === undefined ? 1 : body.value;
 	if ((type !== 'post' && type !== 'reply') || typeof id !== 'number' || !Number.isSafeInteger(id) || id < 1)
 		return fail('bad_request');
-	const result = await app.reactions.toggleVote(accountId, type, id);
-	return result.ok ? json({ active: result.active, count: result.count }) : fail(result.error);
+	if (value !== 1 && value !== -1) return fail('bad_request');
+
+	const r = await app.reactions.vote(accountId, type, id, value);
+	if (!r.ok) return fail(r.error);
+	// active/count mirror the old response shape for pages still open from before this change
+	return json({ vote: r.vote, upvotes: r.upvotes, downvotes: r.downvotes, active: r.vote === 1, count: r.upvotes });
 }

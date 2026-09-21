@@ -1,6 +1,7 @@
 import type { Sql } from '../db';
 import { showsDistress } from '../../shared/distress';
 import { ThreadHandles } from './handles';
+import { NO_DOWNVOTES } from './reactions';
 import { LIMITS, type Kind, type PostView, type ReplyView, type Result, type Status, type ThreadView } from './types';
 
 export interface NewPost {
@@ -83,11 +84,12 @@ export class PostService {
 
 		const rows = await sql`select * from replies where post_id = ${postId} order by id`;
 		const votes = await sql`
-			select v.target_type, v.target_id from votes v
+			select v.target_type, v.target_id, v.value from votes v
 			where v.account_id = ${viewerId}
 			  and ((v.target_type = 'post' and v.target_id = ${postId})
 			    or (v.target_type = 'reply' and v.target_id in (select id from replies where post_id = ${postId})))`;
-		const voted = new Set(votes.map((v) => `${v.target_type}:${v.target_id}`));
+		const myVotes = new Map<string, -1 | 1>(votes.map((v) => [`${v.target_type}:${v.target_id}`, v.value]));
+		const myVote = (key: string): -1 | 0 | 1 => myVotes.get(key) ?? 0;
 		const [metooed] = await sql`select 1 from metoos where account_id = ${viewerId} and post_id = ${postId}`;
 
 		const names = new ThreadHandles(handleKey, postId);
@@ -100,9 +102,11 @@ export class PostService {
 			handle: names.for(p.account_id),
 			publishedOn: new Date(p.published_on).toISOString(),
 			upvotes: p.upvotes,
+			downvotes: p.downvotes,
 			metoo: p.metoo,
 			replyCount: p.reply_count,
-			voted: voted.has(`post:${postId}`),
+			myVote: myVote(`post:${postId}`),
+			canDownvote: !NO_DOWNVOTES.includes(p.slug),
 			metooed: Boolean(metooed),
 			mine: p.account_id === viewerId,
 			distress: showsDistress(`${p.title}\n${p.body}`)
@@ -121,7 +125,8 @@ export class PostService {
 				body: visible ? r.body : '',
 				publishedOn: new Date(r.published_on).toISOString(),
 				upvotes: r.upvotes,
-				voted: voted.has(`reply:${r.id}`),
+				downvotes: r.downvotes,
+				myVote: myVote(`reply:${r.id}`),
 				mine: r.account_id === viewerId,
 				distress: visible && showsDistress(r.body),
 				children: []
@@ -133,7 +138,7 @@ export class PostService {
 			if (reply.parentId === null) top.push(reply);
 			else byId.get(reply.parentId)?.children.push(reply);
 		}
-		top.sort((a, b) => b.upvotes - a.upvotes || a.id - b.id);
+		top.sort((a, b) => b.upvotes - b.downvotes - (a.upvotes - a.downvotes) || a.id - b.id);
 
 		return { post, replies: top, viewerHandle: names.for(viewerId) };
 	}

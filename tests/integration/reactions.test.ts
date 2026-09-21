@@ -30,15 +30,32 @@ beforeEach(async () => {
 });
 
 describe('ReactionService', () => {
-	it('toggles an upvote on a post', async () => {
-		expect(await reactions.toggleVote(bob, 'post', postId)).toEqual({ ok: true, active: true, count: 1 });
-		expect(await reactions.toggleVote(bob, 'post', postId)).toEqual({ ok: true, active: false, count: 0 });
+	it('upvotes, and a second upvote takes it back', async () => {
+		expect(await reactions.vote(bob, 'post', postId, 1)).toEqual({ ok: true, vote: 1, upvotes: 1, downvotes: 0 });
+		expect(await reactions.vote(bob, 'post', postId, 1)).toEqual({ ok: true, vote: 0, upvotes: 0, downvotes: 0 });
 	});
 
-	it('toggles an upvote on a reply', async () => {
+	it('downvotes, and switching direction moves the vote', async () => {
+		expect(await reactions.vote(bob, 'post', postId, -1)).toEqual({ ok: true, vote: -1, upvotes: 0, downvotes: 1 });
+		expect(await reactions.vote(bob, 'post', postId, 1)).toEqual({ ok: true, vote: 1, upvotes: 1, downvotes: 0 });
+		expect(await reactions.vote(bob, 'post', postId, -1)).toEqual({ ok: true, vote: -1, upvotes: 0, downvotes: 1 });
+		expect(await reactions.vote(bob, 'post', postId, -1)).toEqual({ ok: true, vote: 0, upvotes: 0, downvotes: 0 });
+	});
+
+	it('votes on replies', async () => {
 		const r = await posts.createReply(alice, postId, { body: 'Raised with DUGC' });
 		if (!r.ok) throw new Error(r.error);
-		expect(await reactions.toggleVote(bob, 'reply', r.id)).toEqual({ ok: true, active: true, count: 1 });
+		expect(await reactions.vote(bob, 'reply', r.id, -1)).toEqual({ ok: true, vote: -1, upvotes: 0, downvotes: 1 });
+	});
+
+	it('does not allow downvotes in Wellbeing, on posts or replies', async () => {
+		const w = await posts.createPost(alice, { category: 'wellbeing', kind: 'conversation', title: 'Rough week here', body: 'Hard.' });
+		if (!w.ok) throw new Error(w.error);
+		expect(await reactions.vote(bob, 'post', w.id, -1)).toEqual({ ok: false, error: 'not_allowed' });
+		expect((await reactions.vote(bob, 'post', w.id, 1)).ok).toBe(true);
+		const r = await posts.createReply(alice, w.id, { body: 'thanks all' });
+		if (!r.ok) throw new Error(r.error);
+		expect(await reactions.vote(bob, 'reply', r.id, -1)).toEqual({ ok: false, error: 'not_allowed' });
 	});
 
 	it('toggles "affects me too" and counts across accounts', async () => {
@@ -48,7 +65,7 @@ describe('ReactionService', () => {
 	});
 
 	it('rejects missing or deleted targets', async () => {
-		expect(await reactions.toggleVote(bob, 'post', 999_999)).toEqual({ ok: false, error: 'not_found' });
+		expect(await reactions.vote(bob, 'post', 999_999, 1)).toEqual({ ok: false, error: 'not_found' });
 		await posts.deletePost(alice, postId);
 		expect(await reactions.toggleMetoo(bob, postId)).toEqual({ ok: false, error: 'not_found' });
 	});

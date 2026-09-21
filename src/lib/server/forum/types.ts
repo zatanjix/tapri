@@ -24,9 +24,11 @@ export interface PostView {
 	handle: string;
 	publishedOn: string;
 	upvotes: number;
+	downvotes: number;
 	metoo: number;
 	replyCount: number;
-	voted: boolean;
+	myVote: -1 | 0 | 1;
+	canDownvote: boolean;
 	metooed: boolean;
 	mine: boolean;
 	distress: boolean;
@@ -41,7 +43,8 @@ export interface ReplyView {
 	body: string;
 	publishedOn: string;
 	upvotes: number;
-	voted: boolean;
+	downvotes: number;
+	myVote: -1 | 0 | 1;
 	mine: boolean;
 	distress: boolean;
 	children: ReplyView[];
