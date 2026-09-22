@@ -69,6 +69,15 @@
 		</div>
 		<h1>{post.title}</h1>
 		{#if post.doc}<div class="body"><Markdown blocks={post.doc} /></div>{:else}<div class="body plain">{post.body}</div>{/if}
+		{#if post.images.length}
+			<div class="imgs" class:multi={post.images.length > 1}>
+				{#each post.images as img, i (img.id)}
+					<a href="/img/{img.id}" target="_blank" rel="noopener">
+						<img src="/img/{img.id}" width={img.width} height={img.height} loading="lazy" alt="Photo {i + 1} of {post.images.length} attached to this post" />
+					</a>
+				{/each}
+			</div>
+		{/if}
 
 		<div class="acts">
 			<button class="feel" class:on={metoo.active} aria-pressed={metoo.active} onclick={toggleMetoo}>
@@ -164,6 +173,36 @@
 	}
 	.plain {
 		white-space: pre-wrap;
+	}
+	.imgs {
+		display: grid;
+		gap: 8px;
+		margin-top: 14px;
+	}
+	.imgs a {
+		display: block;
+		border-radius: 10px;
+		overflow: hidden;
+		border: 1px solid var(--border);
+		background: var(--surface);
+	}
+	.imgs img {
+		display: block;
+		max-width: 100%;
+		width: auto;
+		height: auto;
+		max-height: 70vh;
+		margin: 0 auto;
+	}
+	@media (min-width: 600px) {
+		.imgs.multi {
+			grid-template-columns: 1fr 1fr;
+		}
+		.imgs.multi img {
+			width: 100%;
+			aspect-ratio: 1;
+			object-fit: cover;
+		}
 	}
 	.acts {
 		display: flex;

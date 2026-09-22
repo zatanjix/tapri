@@ -19,6 +19,7 @@
 		<div class="st">
 			{#if showCount}<span class="count">{item.metoo} {countLabel}</span>{/if}
 			<span>{item.replyCount} {item.replyCount === 1 ? 'reply' : 'replies'}</span>
+			{#if item.imageCount}<span>{item.imageCount} {item.imageCount === 1 ? 'photo' : 'photos'}</span>{/if}
 			{#if item.newReplies}<span class="new">{item.newReplies} new</span>{/if}
 		</div>
 	</div>

@@ -92,9 +92,23 @@ describe('format migration on existing data', () => {
 	it('marks every existing post and reply as plain text', async () => {
 		const [post] = await sql`select id, account_id from posts limit 1`;
 		await sql`insert into replies (post_id, account_id, body) values (${post.id}, ${post.account_id}, 'an old *reply*')`;
-		expect(await migrate(sql)).toContain('010_format.sql');
+		const stepDir = await mkdtemp(join(tmpdir(), 'tapri-mig10-'));
+		for (const f of (await readdir('migrations')).filter((f) => f < '011')) await cp(join('migrations', f), join(stepDir, f));
+		expect(await migrate(sql, stepDir)).toEqual(['010_format.sql']);
+		await rm(stepDir, { recursive: true, force: true });
 		const formats = await sql`select format from posts union all select format from replies`;
 		expect(formats.length).toBeGreaterThan(1);
 		expect(new Set(formats.map((f) => f.format))).toEqual(new Set(['plain']));
+	});
+});
+
+describe('post images migration on existing data', () => {
+	it('adds an empty table and leaves posts untouched', async () => {
+		const [before] = await sql`select count(*)::int as n from posts`;
+		expect(await migrate(sql)).toContain('011_post_images.sql');
+		const [after] = await sql`select count(*)::int as n from posts`;
+		expect(after).toEqual(before);
+		const [{ n }] = await sql`select count(*)::int as n from post_images`;
+		expect(n).toBe(0);
 	});
 });

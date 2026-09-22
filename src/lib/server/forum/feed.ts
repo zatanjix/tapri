@@ -37,6 +37,10 @@ const excerpt = (body: string) => {
 export class FeedService {
 	constructor(private deps: { sql: Sql; handleKey: Uint8Array }) {}
 
+	private imageCount() {
+		return this.deps.sql`(select count(*)::int from post_images i where i.post_id = p.id) as image_count`;
+	}
+
 	async categories() {
 		return this.deps.sql<{ slug: string; name: string; description: string }[]>`
 			select slug, name, description from categories order by sort_order`;
@@ -71,7 +75,7 @@ export class FeedService {
 			p.published_on) desc, p.id desc`;
 
 		const rows = await sql`
-			select p.*, c.slug, c.name ${newReplies}
+			select p.*, c.slug, c.name ${newReplies}, ${this.imageCount()}
 			from posts p join categories c on c.id = p.category_id ${followJoin}
 			where p.status = 'published' ${tab} ${category}
 			order by ${following && q.sort === 'hot' ? activity : order}
@@ -88,7 +92,7 @@ export class FeedService {
 		const marks = `StartSel=${HIT_START}, StopSel=${HIT_END}`;
 		const rows = await sql`
 			with query as (select websearch_to_tsquery('english', ${q}) as tsq)
-			select p.*, c.slug, c.name,
+			select p.*, c.slug, c.name, ${this.imageCount()},
 			       ts_headline('english', p.title, query.tsq, ${`${marks}, HighlightAll=true`}) as title_marked,
 			       ts_headline('english', p.body, query.tsq, ${`${marks}, MaxWords=30, MinWords=12, MaxFragments=2, FragmentDelimiter=" … "`}) as excerpt_marked
 			from posts p join categories c on c.id = p.category_id, query
@@ -126,6 +130,7 @@ export class FeedService {
 			upvotes: r.upvotes,
 			metoo: r.metoo,
 			replyCount: r.reply_count,
+			imageCount: r.image_count ?? 0,
 			...(r.new_replies === undefined ? {} : { newReplies: r.new_replies }),
 			distress: showsDistress(`${r.title}\n${r.body}`),
 			official: r.official

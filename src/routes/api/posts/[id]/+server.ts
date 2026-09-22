@@ -16,6 +16,9 @@ export async function DELETE({ locals, params }) {
 	if (!accountId) return fail('unauthorized');
 	const id = idParam(params.id);
 	if (!id) return fail('not_found');
-	const result = await (await getApp()).posts.deletePost(accountId, id);
+	const app = await getApp();
+	const result = await app.posts.deletePost(accountId, id);
+	// Deleting a post permanently deletes its images. A failure here is retried by the next purge.
+	if (result.ok) await app.images?.purge().catch(() => {});
 	return result.ok ? json({ ok: true }) : fail(result.error);
 }

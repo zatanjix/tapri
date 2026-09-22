@@ -25,7 +25,11 @@ const STATUS: Record<string, number> = {
 	invalid_kind: 400,
 	invalid_title: 400,
 	invalid_body: 400,
-	too_many: 409
+	too_many: 409,
+	too_many_images: 400,
+	invalid_image: 400,
+	images_unavailable: 503,
+	too_large: 413
 };
 
 export const statusFor = (error: string): number => STATUS[error] ?? 400;

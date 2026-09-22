@@ -1,6 +1,8 @@
 import type { Sql } from '../db';
 import { showsDistress } from '../../shared/distress';
 import { parseMarkdown } from '../../shared/markdown';
+import { IMAGE_LIMITS, processImage, type ProcessedImage } from '../images/process';
+import type { ImageService, StoredImage } from '../images/service';
 import { ThreadHandles } from './handles';
 import { NO_DOWNVOTES } from './reactions';
 import { LIMITS, type Kind, type PostView, type ReplyView, type Result, type Status, type ThreadView } from './types';
@@ -12,7 +14,15 @@ export interface NewPost {
 	body: string;
 }
 
-export type CreatePostError = 'unknown_category' | 'invalid_kind' | 'invalid_title' | 'invalid_body' | 'rate_limited';
+export type CreatePostError =
+	| 'unknown_category'
+	| 'invalid_kind'
+	| 'invalid_title'
+	| 'invalid_body'
+	| 'rate_limited'
+	| 'too_many_images'
+	| 'invalid_image'
+	| 'images_unavailable';
 export type CreateReplyError = 'not_found' | 'too_deep' | 'invalid_body' | 'rate_limited';
 
 /** Official posts belong to a system account nobody can sign in as, never to a person's account. */
@@ -25,30 +35,54 @@ export const HOURLY_LIMITS = { posts: 5, replies: 30 } as const;
 const KINDS: readonly Kind[] = ['grievance', 'conversation'];
 
 export class PostService {
-	constructor(private deps: { sql: Sql; handleKey: Uint8Array }) {}
+	constructor(private deps: { sql: Sql; handleKey: Uint8Array; images?: ImageService | null }) {}
 
-	async createPost(accountId: string, input: NewPost): Promise<Result<{ id: number }, CreatePostError>> {
+	/** `images` are raw uploads; they are re-encoded without metadata before anything is stored. */
+	async createPost(accountId: string, input: NewPost, images: Uint8Array[] = []): Promise<Result<{ id: number }, CreatePostError>> {
 		const title = input.title.trim();
 		const body = input.body.trim();
 		if (!KINDS.includes(input.kind as Kind)) return { ok: false, error: 'invalid_kind' };
 		if (title.length < LIMITS.titleMin || title.length > LIMITS.titleMax) return { ok: false, error: 'invalid_title' };
 		if (body.length === 0 || body.length > LIMITS.bodyMax) return { ok: false, error: 'invalid_body' };
+		if (images.length > IMAGE_LIMITS.perPost) return { ok: false, error: 'too_many_images' };
+		const imageService = this.deps.images;
+		if (images.length && !imageService) return { ok: false, error: 'images_unavailable' };
+		const { sql } = this.deps;
 
-		const [{ n }] = await this.deps.sql`
+		const [{ n }] = await sql`
 			select count(*)::int as n from posts
 			where account_id = ${accountId} and published_on > now() - interval '1 hour'`;
 		if (n >= HOURLY_LIMITS.posts) return { ok: false, error: 'rate_limited' };
 
-		// Your own posts are followed from the start.
-		const [row] = await this.deps.sql`
-			with p as (
-				insert into posts (category_id, account_id, kind, title, body, format)
-				select id, ${accountId}, ${input.kind}, ${title}, ${body}, 'markdown' from categories where slug = ${input.category}
-				returning id, account_id
-			)
-			insert into follows (account_id, post_id) select account_id, id from p
-			returning post_id as id`;
-		return row ? { ok: true, id: Number(row.id) } : { ok: false, error: 'unknown_category' };
+		const [category] = await sql`select id from categories where slug = ${input.category}`;
+		if (!category) return { ok: false, error: 'unknown_category' };
+
+		const processed: ProcessedImage[] = [];
+		for (const raw of images) {
+			const img = await processImage(raw);
+			if (!img) return { ok: false, error: 'invalid_image' };
+			processed.push(img);
+		}
+		const stored: StoredImage[] = processed.length ? await imageService!.upload(processed) : [];
+
+		try {
+			const id = await sql.begin(async (tx) => {
+				const [row] = await tx`
+					insert into posts (category_id, account_id, kind, title, body, format)
+					values (${category.id}, ${accountId}, ${input.kind}, ${title}, ${body}, 'markdown') returning id`;
+				// Your own posts are followed from the start.
+				await tx`insert into follows (account_id, post_id) values (${accountId}, ${row.id})`;
+				for (const [position, img] of stored.entries())
+					await tx`
+						insert into post_images (id, post_id, position, width, height, bytes)
+						values (${img.id}, ${row.id}, ${position}, ${img.width}, ${img.height}, ${img.bytes})`;
+				return Number(row.id);
+			});
+			return { ok: true, id };
+		} catch (e) {
+			await imageService?.discard(stored.map((s) => s.id));
+			throw e;
+		}
 	}
 
 	/** Only reachable from the admin page. Skips per-account limits, which exist to stop abuse by people. */
@@ -135,6 +169,8 @@ export class PostService {
 		const myVote = (key: string): -1 | 0 | 1 => myVotes.get(key) ?? 0;
 		const [metooed] = await sql`select 1 from metoos where account_id = ${viewerId} and post_id = ${postId}`;
 		// Opening a followed thread marks its replies as seen.
+		const images = await sql<{ id: string; width: number; height: number }[]>`
+			select id, width, height from post_images where post_id = ${postId} order by position`;
 		const followed = await sql`
 			update follows set seen_replies = ${p.reply_count}
 			where account_id = ${viewerId} and post_id = ${postId} returning 1`;
@@ -147,6 +183,7 @@ export class PostService {
 			title: p.title,
 			body: p.body,
 			doc: p.format === 'markdown' ? parseMarkdown(p.body) : null,
+			images: images.map(({ id, width, height }) => ({ id, width, height })),
 			handle: p.official ? OFFICIAL_HANDLE : names.for(p.account_id),
 			publishedOn: new Date(p.published_on).toISOString(),
 			upvotes: p.upvotes,

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/client/api';
+	import { prepareImage } from '$lib/client/images';
 	import HelpNote from '$lib/components/HelpNote.svelte';
 	import MdHint from '$lib/components/MdHint.svelte';
 	import MdPreview from '$lib/components/MdPreview.svelte';
@@ -18,6 +19,28 @@
 	let body = $state('');
 	let busy = $state(false);
 	let preview = $state(false);
+	let photos = $state<{ blob: Blob; url: string }[]>([]);
+	let preparing = $state(false);
+	let photoError = $state('');
+	const MAX_PHOTOS = 4;
+
+	async function addPhotos(e: Event & { currentTarget: HTMLInputElement }) {
+		const files = [...(e.currentTarget.files ?? [])].slice(0, MAX_PHOTOS - photos.length);
+		e.currentTarget.value = '';
+		photoError = '';
+		preparing = true;
+		for (const file of files) {
+			const blob = await prepareImage(file);
+			if (blob) photos.push({ blob, url: URL.createObjectURL(blob) });
+			else photoError = "One photo couldn't be read. Try a JPEG or PNG.";
+		}
+		preparing = false;
+	}
+
+	function removePhoto(i: number) {
+		URL.revokeObjectURL(photos[i].url);
+		photos.splice(i, 1);
+	}
 	let error = $state('');
 	let loaded = false;
 
@@ -46,17 +69,36 @@
 		invalid_body: 'The post needs some text, up to 10,000 characters.',
 		unknown_category: 'Pick a category.',
 		rate_limited: "You've posted a lot in the last hour. Try again a little later.",
-		network: "Couldn't reach Tapri. Your draft is saved on this device."
+		network: "Couldn't reach Tapri. Your draft is saved on this device.",
+		too_many_images: 'Up to 4 photos per post.',
+		invalid_image: "One of the photos couldn't be read. Try a JPEG or PNG.",
+		images_unavailable: "Photos can't be posted right now. Remove them to post the text.",
+		too_large: 'The photos are too large together. Try fewer.',
+		unavailable: "Photos couldn't be saved just now. Nothing was posted; try again."
 	};
 
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
 		busy = true;
 		error = '';
-		const r = await api<{ id: number }>('/api/posts', { body: { category, kind, title, body } });
+		let payload: FormData | object = { category, kind, title, body };
+		if (photos.length) {
+			// Hosting refuses requests over 4.5 MB; say so here rather than failing vaguely.
+			if (photos.reduce((n, p) => n + p.blob.size, 0) > 4_300_000) {
+				busy = false;
+				error = ERRORS.too_large;
+				return;
+			}
+			const form = new FormData();
+			for (const [k, v] of Object.entries({ category, kind, title, body })) form.append(k, v);
+			photos.forEach((p, i) => form.append('images', p.blob, `photo-${i + 1}`));
+			payload = form;
+		}
+		const r = await api<{ id: number }>('/api/posts', { body: payload });
 		busy = false;
 		if (r.ok) {
 			localStorage.removeItem(DRAFT);
+			photos.forEach((p) => URL.revokeObjectURL(p.url));
 			goto(`/p/${r.data.id}`);
 		} else error = ERRORS[r.error] ?? "Couldn't post that. Your draft is saved on this device.";
 	}
@@ -115,6 +157,32 @@
 		</div>
 		<div class="hintrow"><MdHint /></div>
 	</div>
+
+	{#if data.imagesEnabled}
+		<div class="photos">
+			{#if photos.length}
+				<div class="thumbs">
+					{#each photos as p, i (p.url)}
+						<div class="thumb">
+							<img src={p.url} alt="Photo {i + 1}" />
+							<button type="button" aria-label="Remove photo {i + 1}" onclick={() => removePhoto(i)}>×</button>
+						</div>
+					{/each}
+				</div>
+			{/if}
+			<div class="addrow">
+				<label class="add" class:disabled={photos.length >= MAX_PHOTOS || preparing}>
+					<input type="file" accept="image/*" multiple class="sr-only" disabled={photos.length >= MAX_PHOTOS || preparing} onchange={addPhotos} />
+					{preparing ? 'Preparing…' : photos.length ? `Add photos (${photos.length}/${MAX_PHOTOS})` : 'Add photos'}
+				</label>
+				<span class="pnote">
+					Location, camera and time details are removed before upload. What's <em>in</em> a photo stays: check for
+					faces, names, room numbers and views from windows. <a href="/rules#photos">More</a>
+				</span>
+			</div>
+			{#if photoError}<p class="error" role="alert">{photoError}</p>{/if}
+		</div>
+	{/if}
 
 	{#if distress}<div class="note"><HelpNote distress /></div>{/if}
 
@@ -266,6 +334,68 @@
 	.hintrow {
 		padding: 0 14px 8px;
 		background: var(--surface);
+	}
+	.photos {
+		margin-top: 12px;
+	}
+	.thumbs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-bottom: 10px;
+	}
+	.thumb {
+		position: relative;
+		width: 76px;
+		height: 76px;
+	}
+	.thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		border-radius: 8px;
+		border: 1px solid var(--border);
+	}
+	.thumb button {
+		position: absolute;
+		top: -6px;
+		right: -6px;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		border: 1px solid var(--border);
+		background: var(--bg);
+		color: var(--ink);
+		font-size: 14px;
+		line-height: 1;
+		padding: 0;
+	}
+	.addrow {
+		display: flex;
+		gap: 12px;
+		align-items: flex-start;
+	}
+	.add {
+		flex: none;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		padding: 7px 11px;
+		font-size: 13px;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.add:has(:focus-visible) {
+		outline: 2px solid var(--ink);
+		outline-offset: 2px;
+	}
+	.add.disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+	.pnote {
+		font-size: 12px;
+		line-height: 1.45;
+		color: var(--muted);
 	}
 	.note {
 		margin-top: 12px;

@@ -24,6 +24,7 @@ vite.config.ts.timestamp-*
 
 # Secrets and local tooling (never commit)
 keys/
+.images/
 .superpowers/
 *.log
 .claude/

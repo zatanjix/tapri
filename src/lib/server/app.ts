@@ -15,6 +15,8 @@ import { FollowService } from './forum/follows';
 import { PostService } from './forum/posts';
 import { ReactionService } from './forum/reactions';
 import { ReportService } from './forum/reports';
+import { ImageService } from './images/service';
+import { BlobImageStore, FsImageStore, type ImageStore } from './images/store';
 import { DevConsoleMailer, ResendMailer, SmtpMailer, type Mailer } from './mail/mailer';
 import { IpKeyer, RateLimiter } from './ratelimit';
 import { VerifyService } from './verify/service';
@@ -30,6 +32,8 @@ export interface App {
 	reports: ReportService;
 	feed: FeedService;
 	follows: FollowService;
+	/** Null when no image storage is configured; posts then can't carry images. */
+	images: ImageService | null;
 	ipKeyer: IpKeyer;
 	/** Best-effort, per server instance. Durable limits live in the services. */
 	limits: { verifyStart: RateLimiter; verifyOtp: RateLimiter; signIn: RateLimiter; react: RateLimiter };
@@ -55,6 +59,13 @@ function mailer(): Mailer {
 	}
 }
 
+/** Vercel Blob when connected (BLOB_STORE_ID via OIDC, or a read-write token); a local folder in development. */
+function imageStore(): ImageStore | null {
+	if (env('BLOB_STORE_ID') || env('BLOB_READ_WRITE_TOKEN')) return new BlobImageStore();
+	if (process.env.NODE_ENV !== 'production') return new FsImageStore(env('IMAGES_DIR') ?? '.images');
+	return null;
+}
+
 /** Keys come from environment variables on hosted platforms, or from files in KEYS_DIR locally. */
 async function loadKeys(): Promise<{ keys: IssuerKeys; semesterKey: Buffer; handleKey: Buffer }> {
 	const keyId = env('ISSUER_KEY_ID') ?? semesterId();
@@ -78,6 +89,8 @@ async function loadKeys(): Promise<{ keys: IssuerKeys; semesterKey: Buffer; hand
 async function build(): Promise<App> {
 	const sql = createSql(required('DATABASE_URL'));
 	const { keys, semesterKey, handleKey } = await loadKeys();
+	const store = imageStore();
+	const images = store ? new ImageService({ sql, store }) : null;
 	return {
 		sql,
 		keys,
@@ -91,11 +104,12 @@ async function build(): Promise<App> {
 		}),
 		accounts: new AccountService({ sql, keys }),
 		sessions: new SessionService(sql),
-		posts: new PostService({ sql, handleKey }),
+		posts: new PostService({ sql, handleKey, images }),
 		reactions: new ReactionService(sql),
 		reports: new ReportService(sql),
 		feed: new FeedService({ sql, handleKey }),
 		follows: new FollowService(sql),
+		images,
 		ipKeyer: new IpKeyer(),
 		limits: {
 			verifyStart: new RateLimiter(5, 60 * 60_000),

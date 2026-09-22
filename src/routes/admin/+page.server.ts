@@ -17,6 +17,8 @@ const signedIn = (cookies: { get(name: string): string | undefined }) =>
 export async function load({ cookies }) {
 	if (!signedIn(cookies)) return { unlocked: false, reports: [], categories: [] };
 	const app = await getApp();
+	// Retries any image deletions that failed earlier.
+	await app.images?.purge().catch(() => {});
 	return { unlocked: true, reports: await app.reports.open(), categories: await app.feed.categories() };
 }
 
@@ -45,7 +47,9 @@ export const actions = {
 		if (!signedIn(cookies)) return fail(401, { wrong: true });
 		const t = target(await request.formData());
 		if (!t) return fail(400, { badRequest: true });
-		await (await getApp()).reports.remove(t.type, t.id);
+		const app = await getApp();
+		await app.reports.remove(t.type, t.id);
+		await app.images?.purge().catch(() => {});
 		return { removed: true };
 	},
 

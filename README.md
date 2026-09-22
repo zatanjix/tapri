@@ -47,7 +47,7 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 | That one pseudonymous account wrote certain posts | Who that account is |
 | What's posted | Your IP address, device or browser (never stored by Tapri) |
 
-**What our providers can see.** Tapri runs on Vercel (hosting) with Neon (database) and Resend (email). Vercel keeps short-lived request logs, which include IP addresses. Resend sees the address it delivers a code to. Neither ever sees which account is yours: that link doesn't exist anywhere, so there's nothing for anyone to hand over.
+**What our providers can see.** Tapri runs on Vercel (hosting and photo storage) with Neon (database) and Resend (email). Vercel keeps short-lived request logs, which include IP addresses, and stores posted photos after their metadata is removed. Resend sees the address it delivers a code to. None of them ever sees which account is yours: that link doesn't exist anywhere, so there's nothing for anyone to hand over.
 
 ## Product decisions
 
@@ -63,7 +63,7 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 | **One level of replies, sorted by most helpful** | Readable on phones; supportive answers rise first. |
 | **Upvotes and downvotes** | The community decides what rises. Repeating a vote takes it back. |
 | **Official posts carry a ✓ Official badge** | Announcements come from a separate **Tapri** identity that nobody can sign in as, so no one can impersonate the people running it, and official posts are never linked to anyone's own account. |
-| **No images or uploads** | Photos carry hidden location and device metadata. |
+| **Photos, with metadata removed twice** | Up to 4 per post. Your browser redraws each photo so location, camera and time details never leave your device, and the server re-encodes it again regardless. Photos are members-only and deleted for good with their post. |
 | **Drafts stay on your device** | Unfinished posts never reach the server. |
 | **One verification per email per semester**; accounts last until the end of the next semester | One account per person, and membership stays current. |
 | **Web app**, installable to the home screen | Runs everywhere, instantly, with no app-store identity. |
@@ -78,11 +78,15 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 - **Minimal timestamps.** They exist only where a feature needs one.
 - **Searches aren't recorded.** They're sent in the request body, never in the address, and never stored.
 - **Outbound links carry no referrer.**
+- **Photos keep only their pixels.** The browser redraws each one before upload; the server decodes and re-encodes it as WebP again, with no EXIF, GPS, XMP, IPTC, comments or colour profile, whatever arrives. Pixel watermarks (visible ones, SynthID) survive; Content Credentials (C2PA) are metadata and are removed. Photos are stored privately under random names and served only to signed-in members.
+- **Check it yourself:** save a photo from a post and run `exiftool photo.webp`. Besides details about the file on your own disk (its name, when you saved it), you'll find only the image format and dimensions.
+- **What no stripping can remove:** what's in the picture (faces, name tags, room numbers, views from windows), and a camera's sensor noise pattern, which can in principle match a photo to the device that took it.
 
 Tests enforce this:
 - no table can hold both email-derived data and an account id;
 - no column exists for IPs, user agents or raw emails;
-- a full signup is followed by a scan of **every row of every table** for the email and ticket.
+- a full signup is followed by a scan of **every row of every table** for the email and ticket;
+- a photo carrying GPS coordinates, a camera make, XMP, a comment and a colour profile comes out with none of them ([`tests/unit/images.test.ts`](tests/unit/images.test.ts)).
 
 ## Architecture
 
@@ -91,7 +95,8 @@ Browser ──HTTPS──▶ Vercel (SvelteKit on Node, TypeScript)
                    ├─ Issuer      blind signatures
                    ├─ Verifier    one-time email codes ──▶ Resend
                    ├─ Accounts    tickets, recovery keys, sessions
-                   └─ Forum       posts, replies, votes, "affects me too"
+                   ├─ Forum       posts, replies, votes, "affects me too"
+                   └─ Photos      metadata removed ──▶ Vercel Blob (private)
                                          │
                                   Neon PostgreSQL
 ```
@@ -124,7 +129,8 @@ Browser ──HTTPS──▶ Vercel (SvelteKit on Node, TypeScript)
 | `GET /api/feed?tab=&sort=&category=&page=` | Feed. Tabs: `all`, `following`, `conversations`, `grievances`, `unanswered`. Sorts: `hot` (most relevant, default), `new`, `old`, `top`, `affected` |
 | `GET /api/feed/most-affected` | Most affected grievances this week |
 | `POST /api/search` | Full-text search over posts (`q`, optional `page`, optional `sort`: `relevance`, `new`, `old`). A POST so search words never appear in URLs or request logs. |
-| `POST /api/posts` | New post (`category`, `kind`, `title`, `body`) |
+| `POST /api/posts` | New post (`category`, `kind`, `title`, `body`). As multipart form data, up to 4 `images`. |
+| `GET /img/:id` | A post's photo, for signed-in members |
 | `GET` / `DELETE /api/posts/:id` | Thread with replies / delete your own post |
 | `POST /api/posts/:id/replies` | Reply (`body`, optional `parentId`) |
 | `POST /api/posts/:id/metoo` | Toggle "affects me too" |

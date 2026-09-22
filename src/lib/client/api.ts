@@ -2,11 +2,12 @@ export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; 
 
 /** JSON fetch to Tapri's own API. Never throws: network failures come back as `error: 'network'`. */
 export async function api<T = unknown>(path: string, init: { method?: string; body?: unknown } = {}): Promise<ApiResult<T>> {
+	const form = init.body instanceof FormData;
 	try {
 		const res = await fetch(path, {
 			method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
-			headers: init.body === undefined ? undefined : { 'content-type': 'application/json' },
-			body: init.body === undefined ? undefined : JSON.stringify(init.body)
+			headers: init.body === undefined || form ? undefined : { 'content-type': 'application/json' },
+			body: init.body === undefined ? undefined : form ? (init.body as FormData) : JSON.stringify(init.body)
 		});
 		const data = await res.json().catch(() => ({}));
 		return res.ok ? { ok: true, data: data as T } : { ok: false, status: res.status, error: data.error ?? 'unknown' };

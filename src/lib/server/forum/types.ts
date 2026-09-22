@@ -11,6 +11,13 @@ export const LIMITS = {
 	excerpt: 280
 } as const;
 
+/** A post's image, served at /img/:id to signed-in members. */
+export interface ImageRef {
+	id: string;
+	width: number;
+	height: number;
+}
+
 export interface CategoryRef {
 	slug: string;
 	name: string;
@@ -25,6 +32,7 @@ export interface PostView {
 	body: string;
 	/** The body as formatted blocks, or null for posts written before markdown (shown as plain text). */
 	doc: Block[] | null;
+	images: ImageRef[];
 	handle: string;
 	publishedOn: string;
 	upvotes: number;
@@ -77,6 +85,7 @@ export interface FeedItem {
 	replyCount: number;
 	/** Only on the Following tab: replies since the viewer last opened the thread. */
 	newReplies?: number;
+	imageCount: number;
 	distress: boolean;
 	official: boolean;
 }

@@ -19,7 +19,8 @@ export default defineConfig({
 					'default-src': ['self'],
 					'script-src': ['self'],
 					'style-src': ['self', 'unsafe-inline'],
-					'img-src': ['self', 'data:'],
+					// blob: is only for previews of photos you're about to post, made in your own browser.
+					'img-src': ['self', 'data:', 'blob:'],
 					'font-src': ['self'],
 					'connect-src': ['self'],
 					'manifest-src': ['self'],

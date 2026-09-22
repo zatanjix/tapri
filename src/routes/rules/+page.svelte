@@ -31,12 +31,37 @@
 			<b>Don't use Tapri to put someone in danger.</b>
 			<span>No threats, and nothing encouraging anyone to hurt themselves or anyone else.</span>
 		</li>
+		<li>
+			<b>No explicit or shocking images.</b>
+			<span>Nothing sexual, no gore, nothing posted to shock. Photos of the problem are welcome: the leak, the notice, the queue.</span>
+		</li>
 	</ol>
 
 	<h2>What happens if a post breaks them</h2>
 	<p>
 		It may be removed. When that happens the thread keeps a note in its place, so the conversation still
 		makes sense and everyone can see which rule was involved.
+	</p>
+
+	<h2 id="photos">Photos</h2>
+	<p>
+		<b>What's removed.</b> Your browser redraws each photo before it's sent and keeps only the pixels, so
+		location, camera model, time taken and every other hidden detail stay on your device. Tapri's server then
+		re-encodes it again, whatever arrives.
+	</p>
+	<p>
+		<b>What stays.</b> Everything you can see. Faces, name tags, ID cards, room numbers, notice boards and views
+		out of windows can all say who or where you are, so look before you post. Watermarks stay too, including
+		invisible ones built into the pixels like SynthID on AI images. Content Credentials are removed, because
+		they're stored as metadata and can name a device or a person.
+	</p>
+	<p>
+		<b>Check it yourself.</b> Save a photo from any post and open it in a metadata viewer (on a computer:
+		<code>exiftool photo.webp</code>). Besides details about the file on your own computer (its name, when you saved it), you'll find only the image format and dimensions.
+	</p>
+	<p>
+		<b>Who sees them.</b> Only signed-in members. Photos are stored privately and deleted for good when their post
+		is deleted or removed.
 	</p>
 
 	<h2>If someone here is struggling</h2>
@@ -114,6 +139,16 @@
 		font-size: 16px;
 		font-weight: 800;
 		margin: 24px 0 4px;
+	}
+	h2[id] {
+		scroll-margin-top: 80px;
+	}
+	code {
+		font-family: var(--mono);
+		font-size: 0.88em;
+		background: var(--surface);
+		border-radius: 4px;
+		padding: 1px 5px;
 	}
 	.page > p {
 		margin: 0;
