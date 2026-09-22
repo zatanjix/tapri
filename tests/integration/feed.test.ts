@@ -106,4 +106,9 @@ describe('FeedService sort orders', () => {
 		expect((await feed.list({ tab: 'all', sort: 'new' })).map((i) => i.id)).toEqual([third, second, first]);
 		expect((await feed.list({ tab: 'all', sort: 'top' })).map((i) => i.id)).toEqual([second, third, first]);
 	});
+
+	it('shows markdown posts as plain words in excerpts', async () => {
+		await post('Formatted post', { body: '**Mess** food is [bad](https://example.org) $x^2$' });
+		expect((await feed.list({ tab: 'all', sort: 'new' }))[0].excerpt).toBe('Mess food is bad x^2');
+	});
 });

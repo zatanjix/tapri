@@ -1,3 +1,5 @@
+import type { Block } from '../../shared/markdown';
+
 export type Kind = 'grievance' | 'conversation';
 export type Status = 'published' | 'deleted' | 'removed';
 
@@ -21,6 +23,8 @@ export interface PostView {
 	kind: Kind;
 	title: string;
 	body: string;
+	/** The body as formatted blocks, or null for posts written before markdown (shown as plain text). */
+	doc: Block[] | null;
 	handle: string;
 	publishedOn: string;
 	upvotes: number;
@@ -43,6 +47,7 @@ export interface ReplyView {
 	isOp: boolean;
 	status: Status;
 	body: string;
+	doc: Block[] | null;
 	publishedOn: string;
 	upvotes: number;
 	downvotes: number;

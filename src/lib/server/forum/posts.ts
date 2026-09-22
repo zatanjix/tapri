@@ -1,5 +1,6 @@
 import type { Sql } from '../db';
 import { showsDistress } from '../../shared/distress';
+import { parseMarkdown } from '../../shared/markdown';
 import { ThreadHandles } from './handles';
 import { NO_DOWNVOTES } from './reactions';
 import { LIMITS, type Kind, type PostView, type ReplyView, type Result, type Status, type ThreadView } from './types';
@@ -41,8 +42,8 @@ export class PostService {
 		// Your own posts are followed from the start.
 		const [row] = await this.deps.sql`
 			with p as (
-				insert into posts (category_id, account_id, kind, title, body)
-				select id, ${accountId}, ${input.kind}, ${title}, ${body} from categories where slug = ${input.category}
+				insert into posts (category_id, account_id, kind, title, body, format)
+				select id, ${accountId}, ${input.kind}, ${title}, ${body}, 'markdown' from categories where slug = ${input.category}
 				returning id, account_id
 			)
 			insert into follows (account_id, post_id) select account_id, id from p
@@ -57,8 +58,8 @@ export class PostService {
 		if (title.length < LIMITS.titleMin || title.length > LIMITS.titleMax) return { ok: false, error: 'invalid_title' };
 		if (body.length === 0 || body.length > LIMITS.bodyMax) return { ok: false, error: 'invalid_body' };
 		const [row] = await this.deps.sql`
-			insert into posts (category_id, account_id, kind, title, body, official)
-			select id, ${SYSTEM_ACCOUNT_ID}, 'conversation', ${title}, ${body}, true from categories where slug = ${input.category}
+			insert into posts (category_id, account_id, kind, title, body, official, format)
+			select id, ${SYSTEM_ACCOUNT_ID}, 'conversation', ${title}, ${body}, true, 'markdown' from categories where slug = ${input.category}
 			returning id`;
 		return row ? { ok: true, id: Number(row.id) } : { ok: false, error: 'unknown_category' };
 	}
@@ -70,8 +71,8 @@ export class PostService {
 			const [post] = await tx`select 1 from posts where id = ${postId} and status = 'published'`;
 			if (!post) return null;
 			const [row] = await tx`
-				insert into replies (post_id, account_id, body, official)
-				values (${postId}, ${SYSTEM_ACCOUNT_ID}, ${body}, true) returning id`;
+				insert into replies (post_id, account_id, body, official, format)
+				values (${postId}, ${SYSTEM_ACCOUNT_ID}, ${body}, true, 'markdown') returning id`;
 			await tx`update posts set reply_count = reply_count + 1 where id = ${postId}`;
 			return Number(row.id);
 		});
@@ -104,8 +105,8 @@ export class PostService {
 
 		const id = await sql.begin(async (tx) => {
 			const [row] = await tx`
-				insert into replies (post_id, parent_id, account_id, body)
-				values (${postId}, ${input.parentId ?? null}, ${accountId}, ${body}) returning id`;
+				insert into replies (post_id, parent_id, account_id, body, format)
+				values (${postId}, ${input.parentId ?? null}, ${accountId}, ${body}, 'markdown') returning id`;
 			await tx`update posts set reply_count = reply_count + 1 where id = ${postId}`;
 			// Replying follows the thread, with everything up to your own reply counted as seen.
 			await tx`
@@ -145,6 +146,7 @@ export class PostService {
 			kind: p.kind,
 			title: p.title,
 			body: p.body,
+			doc: p.format === 'markdown' ? parseMarkdown(p.body) : null,
 			handle: p.official ? OFFICIAL_HANDLE : names.for(p.account_id),
 			publishedOn: new Date(p.published_on).toISOString(),
 			upvotes: p.upvotes,
@@ -171,6 +173,7 @@ export class PostService {
 				isOp: !r.official && r.account_id === p.account_id,
 				status,
 				body: visible ? r.body : '',
+				doc: visible && r.format === 'markdown' ? parseMarkdown(r.body) : null,
 				publishedOn: new Date(r.published_on).toISOString(),
 				upvotes: r.upvotes,
 				downvotes: r.downvotes,

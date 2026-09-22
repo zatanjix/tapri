@@ -137,3 +137,29 @@ describe('PostService limits', () => {
 		expect(await posts.createReply(carol, id, { body: 'one too many' })).toEqual({ ok: false, error: 'rate_limited' });
 	});
 });
+
+describe('PostService formatting', () => {
+	it('formats new posts and replies as markdown', async () => {
+		const id = await created(alice, { ...grievance, body: 'Since **August**' });
+		await posts.createReply(bob, id, { body: 'same, `ping` fails' });
+		const thread = await posts.getThread(bob, id);
+		expect(thread?.post.doc).toEqual([{ t: 'p', c: [{ t: 'text', v: 'Since ' }, { t: 'strong', c: [{ t: 'text', v: 'August' }] }] }]);
+		expect(thread?.replies[0].doc?.[0]).toEqual({ t: 'p', c: [{ t: 'text', v: 'same, ' }, { t: 'code', v: 'ping' }, { t: 'text', v: ' fails' }] });
+	});
+
+	it('leaves posts written before markdown as plain text', async () => {
+		const id = await created(alice, { ...grievance, body: 'Old *post*' });
+		await sql`update posts set format = 'plain' where id = ${id}`;
+		const thread = await posts.getThread(bob, id);
+		expect(thread?.post.doc).toBeNull();
+		expect(thread?.post.body).toBe('Old *post*');
+	});
+
+	it('gives deleted replies no content', async () => {
+		const id = await created();
+		const r = await posts.createReply(bob, id, { body: '**secret**' });
+		if (!r.ok) throw new Error(r.error);
+		await posts.deleteReply(bob, r.id);
+		expect((await posts.getThread(alice, id))?.replies[0].doc).toBeNull();
+	});
+});

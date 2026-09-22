@@ -1,5 +1,6 @@
 import type { Sql } from '../db';
 import { showsDistress } from '../../shared/distress';
+import { toPlainText } from '../../shared/markdown';
 import { baseHandle } from './handles';
 import { OFFICIAL_HANDLE } from './posts';
 import { LIMITS, type FeedItem } from './types';
@@ -100,7 +101,7 @@ export class FeedService {
 						: sql`ts_rank(p.search, query.tsq) desc, p.published_on desc`
 			}
 			limit ${PAGE_SIZE} offset ${offset}`;
-		return rows.map((r) => ({ ...this.item(r), titleMarked: r.title_marked, excerptMarked: r.excerpt_marked }));
+		return rows.map((r) => ({ ...this.item(r), titleMarked: r.title_marked, excerptMarked: r.format === 'markdown' ? toPlainText(r.excerpt_marked) : r.excerpt_marked }));
 	}
 
 	async mostAffected(days = 7, limit = 5): Promise<FeedItem[]> {
@@ -119,7 +120,7 @@ export class FeedService {
 			category: { slug: r.slug, name: r.name },
 			kind: r.kind,
 			title: r.title,
-			excerpt: excerpt(r.body),
+			excerpt: excerpt(r.format === 'markdown' ? toPlainText(r.body) : r.body),
 			handle: r.official ? OFFICIAL_HANDLE : baseHandle(this.deps.handleKey, r.account_id, r.id),
 			publishedOn: new Date(r.published_on).toISOString(),
 			upvotes: r.upvotes,

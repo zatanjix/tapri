@@ -77,10 +77,24 @@ describe('official-posts migration on existing data', () => {
 describe('follows migration on existing data', () => {
 	it('adds an empty follows table and leaves posts untouched', async () => {
 		const [before] = await sql`select count(*)::int as n, sum(reply_count)::int as r from posts`;
-		expect(await migrate(sql)).toContain('009_follows.sql');
+		const stepDir = await mkdtemp(join(tmpdir(), 'tapri-mig9-'));
+		for (const f of (await readdir('migrations')).filter((f) => f < '010')) await cp(join('migrations', f), join(stepDir, f));
+		expect(await migrate(sql, stepDir)).toEqual(['009_follows.sql']);
+		await rm(stepDir, { recursive: true, force: true });
 		const [after] = await sql`select count(*)::int as n, sum(reply_count)::int as r from posts`;
 		expect(after).toEqual(before);
 		const [{ n }] = await sql`select count(*)::int as n from follows`;
 		expect(n).toBe(0);
+	});
+});
+
+describe('format migration on existing data', () => {
+	it('marks every existing post and reply as plain text', async () => {
+		const [post] = await sql`select id, account_id from posts limit 1`;
+		await sql`insert into replies (post_id, account_id, body) values (${post.id}, ${post.account_id}, 'an old *reply*')`;
+		expect(await migrate(sql)).toContain('010_format.sql');
+		const formats = await sql`select format from posts union all select format from replies`;
+		expect(formats.length).toBeGreaterThan(1);
+		expect(new Set(formats.map((f) => f.format))).toEqual(new Set(['plain']));
 	});
 });

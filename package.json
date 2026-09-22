@@ -22,6 +22,7 @@
 		"@sveltejs/adapter-vercel": "^6.3.4",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@types/mdast": "^4.0.4",
 		"@types/node": "^26.6.2",
 		"@types/nodemailer": "^8.0.2",
 		"svelte": "^5.56.1",
@@ -35,8 +36,17 @@
 		"@cloudflare/blindrsa-ts": "^0.4.4",
 		"@fontsource/jetbrains-mono": "^5.3.0",
 		"@fontsource/plus-jakarta-sans": "^5.3.0",
+		"mdast-util-from-markdown": "^2.0.3",
+		"mdast-util-gfm-autolink-literal": "^2.0.1",
+		"mdast-util-gfm-strikethrough": "^2.0.0",
+		"mdast-util-math": "^3.0.0",
+		"micromark": "^4.0.2",
+		"micromark-extension-gfm-autolink-literal": "^2.1.0",
+		"micromark-extension-gfm-strikethrough": "^2.1.0",
+		"micromark-extension-math": "^3.1.0",
 		"nodemailer": "^10.0.10",
-		"postgres": "^3.4.9"
+		"postgres": "^3.4.9",
+		"temml": "^0.13.5"
 	},
 	"engines": {
 		"node": ">=22.12 <23 || >=24"
