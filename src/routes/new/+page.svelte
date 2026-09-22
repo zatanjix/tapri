@@ -3,6 +3,8 @@
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/client/api';
 	import HelpNote from '$lib/components/HelpNote.svelte';
+	import MdHint from '$lib/components/MdHint.svelte';
+	import MdPreview from '$lib/components/MdPreview.svelte';
 	import { showsDistress } from '$lib/shared/distress';
 
 	let { data } = $props();
@@ -15,6 +17,7 @@
 	let title = $state('');
 	let body = $state('');
 	let busy = $state(false);
+	let preview = $state(false);
 	let error = $state('');
 	let loaded = false;
 
@@ -97,9 +100,20 @@
 	<div class="editor">
 		<label class="sr-only" for="title">Title</label>
 		<input id="title" class="title" bind:value={title} maxlength="150" placeholder="Title" autocomplete="off" />
-		<label class="sr-only" for="body">Post</label>
-		<textarea id="body" bind:value={body} maxlength="10000" rows="9" placeholder="Say what happened, since when, and what you've already tried."></textarea>
-		<div class="meta"><span>No images, to keep hidden metadata out.</span><span>{body.length.toLocaleString()} / 10,000</span></div>
+		{#if preview}
+			<div class="preview"><MdPreview source={body} /></div>
+		{:else}
+			<label class="sr-only" for="body">Post</label>
+			<textarea id="body" bind:value={body} maxlength="10000" rows="9" placeholder="Say what happened, since when, and what you've already tried."></textarea>
+		{/if}
+		<div class="meta">
+			<div class="modes" role="group" aria-label="Editor mode">
+				<button type="button" aria-pressed={!preview} onclick={() => (preview = false)}>Write</button>
+				<button type="button" aria-pressed={preview} onclick={() => (preview = true)}>Preview</button>
+			</div>
+			<span>{body.length.toLocaleString()} / 10,000</span>
+		</div>
+		<div class="hintrow"><MdHint /></div>
 	</div>
 
 	{#if distress}<div class="note"><HelpNote distress /></div>{/if}
@@ -220,6 +234,37 @@
 		padding: 7px 14px;
 		font-size: 12px;
 		color: var(--muted);
+		background: var(--surface);
+	}
+	.preview {
+		padding: 12px 14px;
+		min-height: 180px;
+		font-size: 15px;
+		line-height: 1.65;
+	}
+	.meta {
+		align-items: center;
+	}
+	.modes {
+		display: flex;
+		gap: 2px;
+	}
+	.modes button {
+		border: 0;
+		background: none;
+		border-radius: 6px;
+		padding: 3px 9px;
+		font-size: 12px;
+		font-weight: 700;
+		color: var(--muted);
+	}
+	.modes button[aria-pressed='true'] {
+		background: var(--bg);
+		color: var(--ink);
+		box-shadow: 0 0 0 1px var(--border);
+	}
+	.hintrow {
+		padding: 0 14px 8px;
 		background: var(--surface);
 	}
 	.note {

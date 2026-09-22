@@ -4,6 +4,7 @@
 	import { timeAgo } from '$lib/shared/time';
 	import Avatar from './Avatar.svelte';
 	import HelpNote from './HelpNote.svelte';
+	import Markdown from './Markdown.svelte';
 	import OfficialBadge from './OfficialBadge.svelte';
 	import Reply from './Reply.svelte';
 	import ReplyBox from './ReplyBox.svelte';
@@ -39,7 +40,7 @@
 				{#if reply.mine}<span class="you">you</span>{/if}
 				· {timeAgo(reply.publishedOn)}
 			</div>
-			<p class="tx">{reply.body}</p>
+			{#if reply.doc}<div class="tx"><Markdown blocks={reply.doc} /></div>{:else}<p class="tx plain">{reply.body}</p>{/if}
 			{#if reply.distress}<div class="note"><HelpNote distress /></div>{/if}
 			<div class="acts">
 				<VoteControl targetType="reply" targetId={reply.id} upvotes={reply.upvotes} downvotes={reply.downvotes} myVote={reply.myVote} {canDownvote} compact />
@@ -116,8 +117,10 @@
 		font-size: 14.5px;
 		line-height: 1.6;
 		margin: 4px 0 6px;
-		white-space: pre-wrap;
 		overflow-wrap: anywhere;
+	}
+	.plain {
+		white-space: pre-wrap;
 	}
 	.gone {
 		font-size: 13px;

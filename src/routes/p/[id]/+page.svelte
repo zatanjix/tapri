@@ -3,6 +3,7 @@
 	import { api } from '$lib/client/api';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import HelpNote from '$lib/components/HelpNote.svelte';
+	import Markdown from '$lib/components/Markdown.svelte';
 	import OfficialBadge from '$lib/components/OfficialBadge.svelte';
 	import Reply from '$lib/components/Reply.svelte';
 	import ReplyBox from '$lib/components/ReplyBox.svelte';
@@ -67,7 +68,7 @@
 			<span><b>{post.handle}</b>{#if post.official} <OfficialBadge />{/if}{#if post.mine} <span class="you">you</span>{/if} · {timeAgo(post.publishedOn)}</span>
 		</div>
 		<h1>{post.title}</h1>
-		<div class="body">{post.body}</div>
+		{#if post.doc}<div class="body"><Markdown blocks={post.doc} /></div>{:else}<div class="body plain">{post.body}</div>{/if}
 
 		<div class="acts">
 			<button class="feel" class:on={metoo.active} aria-pressed={metoo.active} onclick={toggleMetoo}>
@@ -159,8 +160,10 @@
 	.body {
 		font-size: 15.5px;
 		line-height: 1.65;
-		white-space: pre-wrap;
 		overflow-wrap: anywhere;
+	}
+	.plain {
+		white-space: pre-wrap;
 	}
 	.acts {
 		display: flex;

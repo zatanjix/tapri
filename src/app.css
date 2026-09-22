@@ -210,3 +210,8 @@ button {
 		animation: none !important;
 	}
 }
+
+/* Math from Temml (MathML). Browsers draw it with a math font that reads a little small. */
+math {
+	font-size: 1.1em;
+}

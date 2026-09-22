@@ -58,6 +58,7 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 | **Fixed categories**: Academics, Hostel & Mess, Wellbeing, Harassment, Administration, Placements, General, Feedback | One place instead of dozens of scattered groups. Feedback about Tapri itself stays in the open, where others can add to it. |
 | **Grievances and conversations** | Grievances collect an **"Affects me too"** count. A problem 340 people have marked is hard to dismiss. Conversations (**"I feel this too"** in Wellbeing) are for questions, advice and support. |
 | **A new random name in every thread** | Consistent within a conversation, untraceable across them. The thread author is marked `OP`. |
+| **Formatting and math** | Bold, italics, lists, quotes, links, code and `$math$`. Text is read into a fixed set of elements, so there is no way to inject HTML or scripts. |
 | **Follow threads** | Your own posts and threads you reply to are followed automatically. New replies are counted, not timed: Tapri never records when you read something. |
 | **One level of replies, sorted by most helpful** | Readable on phones; supportive answers rise first. |
 | **Upvotes and downvotes** | The community decides what rises. Repeating a vote takes it back. |
