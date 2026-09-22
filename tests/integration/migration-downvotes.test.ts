@@ -61,12 +61,26 @@ describe('search migration on existing data', () => {
 
 describe('official-posts migration on existing data', () => {
 	it('marks every existing post and reply as not official, and adds a system account', async () => {
-		expect(await migrate(sql)).toContain('008_official.sql');
+		const stepDir = await mkdtemp(join(tmpdir(), 'tapri-mig8-'));
+		for (const f of (await readdir('migrations')).filter((f) => f < '009')) await cp(join('migrations', f), join(stepDir, f));
+		expect(await migrate(sql, stepDir)).toEqual(['008_official.sql']);
+		await rm(stepDir, { recursive: true, force: true });
 		const official = await sql`select count(*)::int as n from posts where official`;
 		const total = await sql`select count(*)::int as n from posts`;
 		expect(official[0].n).toBe(0);
 		expect(total[0].n).toBeGreaterThan(0);
 		const [system] = await sql`select status, valid_until::text as v from accounts where id = '00000000-0000-0000-0000-000000000001'`;
 		expect(system).toEqual({ status: 'active', v: '9999-12-31' });
+	});
+});
+
+describe('follows migration on existing data', () => {
+	it('adds an empty follows table and leaves posts untouched', async () => {
+		const [before] = await sql`select count(*)::int as n, sum(reply_count)::int as r from posts`;
+		expect(await migrate(sql)).toContain('009_follows.sql');
+		const [after] = await sql`select count(*)::int as n, sum(reply_count)::int as r from posts`;
+		expect(after).toEqual(before);
+		const [{ n }] = await sql`select count(*)::int as n from follows`;
+		expect(n).toBe(0);
 	});
 });
