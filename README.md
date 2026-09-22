@@ -62,7 +62,7 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 | **Follow threads** | Your own posts and threads you reply to are followed automatically. New replies are counted, not timed: Tapri never records when you read something. |
 | **One level of replies, sorted by most helpful** | Readable on phones; supportive answers rise first. |
 | **Upvotes and downvotes** | The community decides what rises. Repeating a vote takes it back. |
-| **Official posts carry a ✓ Official badge** | Announcements come from a separate **Tapri** identity that nobody can sign in as, so no one can impersonate the people running it, and official posts are never linked to anyone's own account. |
+| **Official posts carry a ✓ Official badge** | Announcements come from a separate **Tapri** identity that nobody can sign in as, so no one can impersonate the people running it, and official posts are never linked to anyone's own account. The latest ones are pinned to the top for two weeks. |
 | **Photos, with metadata removed twice** | Up to 4 per post. Your browser redraws each photo so location, camera and time details never leave your device, and the server re-encodes it again regardless. Photos are members-only and deleted for good with their post. |
 | **Drafts stay on your device** | Unfinished posts never reach the server. |
 | **One verification per email per semester**; accounts last until the end of the next semester | One account per person, and membership stays current. |

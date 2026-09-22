@@ -4,16 +4,16 @@
 	import Avatar from './Avatar.svelte';
 	import OfficialBadge from './OfficialBadge.svelte';
 
-	let { item }: { item: FeedItem } = $props();
+	let { item, pinned = false }: { item: FeedItem; pinned?: boolean } = $props();
 
 	const countLabel = $derived(item.kind === 'grievance' ? 'affected' : 'feel this');
 	const showCount = $derived(item.kind === 'grievance' || item.metoo > 0);
 </script>
 
-<article class="row">
+<article class="row" class:pinned>
 	<Avatar handle={item.handle} />
 	<div class="main">
-		<div class="who"><b>{item.handle}</b>{#if item.official} <OfficialBadge />{/if} · {item.category.name} · {timeAgo(item.publishedOn)}</div>
+		<div class="who">{#if pinned}<span class="pin">Pinned</span>{/if}<b>{item.handle}</b>{#if item.official} <OfficialBadge />{/if} · {item.category.name} · {timeAgo(item.publishedOn)}</div>
 		<h3><a href="/p/{item.id}">{item.title}</a></h3>
 		<p class="ex">{item.excerpt}</p>
 		<div class="st">
@@ -32,6 +32,24 @@
 		gap: 12px;
 		padding: 15px 0;
 		border-bottom: 1px solid var(--border);
+	}
+	.pinned {
+		background: color-mix(in srgb, var(--band) 16%, transparent);
+		margin: 0 calc(-1 * var(--gutter));
+		padding-left: var(--gutter);
+		padding-right: var(--gutter);
+	}
+	.pin {
+		display: inline-block;
+		margin-right: 7px;
+		font-size: 10.5px;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		padding: 1px 6px;
+		border-radius: 4px;
+		background: var(--ink);
+		color: var(--bg);
 	}
 	.main {
 		min-width: 0;

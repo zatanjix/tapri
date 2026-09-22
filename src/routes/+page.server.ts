@@ -6,6 +6,12 @@ export async function load({ locals, url }) {
 	if (!locals.accountId) redirect(303, '/welcome');
 	const { tab, sort, page } = feedParams(url);
 	const app = await getApp();
-	const [items, mostAffected] = await Promise.all([app.feed.list({ tab, sort, page, viewerId: locals.accountId }), app.feed.mostAffected()]);
-	return { items, mostAffected, tab, sort, page, tabs: TABS, sorts: SORTS };
+	// Recent official posts sit on top of the Everything tab, and aren't repeated below.
+	const pinned = tab === 'all' ? await app.feed.pinned() : [];
+	const exclude = pinned.map((p) => p.id);
+	const [items, mostAffected] = await Promise.all([
+		app.feed.list({ tab, sort, page, viewerId: locals.accountId, exclude }),
+		app.feed.mostAffected()
+	]);
+	return { items, pinned: page === 1 ? pinned : [], mostAffected, tab, sort, page, tabs: TABS, sorts: SORTS };
 }

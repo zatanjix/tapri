@@ -16,7 +16,13 @@ export interface FeedQuery {
 	page?: number;
 	/** Needed for the Following tab. */
 	viewerId?: string;
+	/** Posts shown elsewhere on the page (pinned), left out of the list. */
+	exclude?: number[];
 }
+
+/** Official posts stay pinned this long, at most PINNED_MAX at a time; then they rank like any other post. */
+export const PINNED_DAYS = 14;
+export const PINNED_MAX = 2;
 
 export const PAGE_SIZE = 20;
 
@@ -59,6 +65,7 @@ export class FeedService {
 			unanswered: sql`and p.reply_count = 0`
 		}[q.tab];
 		const category = q.category ? sql`and c.slug = ${q.category}` : sql``;
+		const exclude = q.exclude?.length ? sql`and p.id not in ${sql(q.exclude)}` : sql``;
 		const order = {
 			new: sql`p.published_on desc, p.id desc`,
 			old: sql`p.published_on asc, p.id asc`,
@@ -77,7 +84,7 @@ export class FeedService {
 		const rows = await sql`
 			select p.*, c.slug, c.name ${newReplies}, ${this.imageCount()}
 			from posts p join categories c on c.id = p.category_id ${followJoin}
-			where p.status = 'published' ${tab} ${category}
+			where p.status = 'published' ${tab} ${category} ${exclude}
 			order by ${following && q.sort === 'hot' ? activity : order}
 			limit ${PAGE_SIZE} offset ${(page - 1) * PAGE_SIZE}`;
 		return rows.map((r) => this.item(r));
@@ -106,6 +113,19 @@ export class FeedService {
 			}
 			limit ${PAGE_SIZE} offset ${offset}`;
 		return rows.map((r) => ({ ...this.item(r), titleMarked: r.title_marked, excerptMarked: r.format === 'markdown' ? toPlainText(r.excerpt_marked) : r.excerpt_marked }));
+	}
+
+	/** The latest official posts, pinned above the Everything feed (or a category's, if they're in it). */
+	async pinned(category?: string): Promise<FeedItem[]> {
+		const { sql } = this.deps;
+		const rows = await sql`
+			select p.*, c.slug, c.name, ${this.imageCount()}
+			from posts p join categories c on c.id = p.category_id
+			where p.status = 'published' and p.official
+			  and p.published_on > now() - make_interval(days => ${PINNED_DAYS})
+			  ${category ? sql`and c.slug = ${category}` : sql``}
+			order by p.published_on desc, p.id desc limit ${PINNED_MAX}`;
+		return rows.map((r) => this.item(r));
 	}
 
 	async mostAffected(days = 7, limit = 5): Promise<FeedItem[]> {

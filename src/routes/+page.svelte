@@ -18,7 +18,7 @@
 	<div class="col">
 		<SearchBox />
 		<CategoryBar categories={data.categories} />
-		<Feed items={data.items} tab={data.tab} sort={data.sort} page={data.page} tabs={data.tabs} sorts={data.sorts} />
+		<Feed items={data.items} pinned={data.pinned} tab={data.tab} sort={data.sort} page={data.page} tabs={data.tabs} sorts={data.sorts} />
 	</div>
 	<aside class="side">
 		<SupportBox />

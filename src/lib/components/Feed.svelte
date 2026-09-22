@@ -6,6 +6,7 @@
 
 	let {
 		items,
+		pinned = [],
 		tab,
 		sort,
 		page,
@@ -13,6 +14,7 @@
 		sorts
 	}: {
 		items: FeedItem[];
+		pinned?: FeedItem[];
 		tab: FeedTab;
 		sort: FeedSort;
 		page: number;
@@ -53,12 +55,14 @@
 	</select>
 </div>
 
+{#each pinned as item (item.id)}<FeedRow {item} pinned />{/each}
+
 {#if items.length}
 	{#each items as item (item.id)}<FeedRow {item} />{/each}
 	{#if items.length === 20}
 		<a class="more" href={href({ page: page + 1 })}>More posts</a>
 	{/if}
-{:else}
+{:else if !pinned.length}
 	<p class="empty">{EMPTY[tab]} <a href="/new">Create a post</a></p>
 {/if}
 

@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Sql } from '../../src/lib/server/db';
 import { FeedService } from '../../src/lib/server/forum/feed';
-import { PostService } from '../../src/lib/server/forum/posts';
+import { PostService, SYSTEM_ACCOUNT_ID } from '../../src/lib/server/forum/posts';
 import { makeAccount } from '../helpers/accounts';
 import { clearData, freshDb } from '../helpers/db';
 
@@ -110,5 +110,31 @@ describe('FeedService sort orders', () => {
 	it('shows markdown posts as plain words in excerpts', async () => {
 		await post('Formatted post', { body: '**Mess** food is [bad](https://example.org) $x^2$' });
 		expect((await feed.list({ tab: 'all', sort: 'new' }))[0].excerpt).toBe('Mess food is bad x^2');
+	});
+
+	it('pins the two latest official posts from the last 14 days', async () => {
+		await sql`
+			insert into accounts (id, secret_hash, valid_until) values (${SYSTEM_ACCOUNT_ID}, decode(repeat('00', 32), 'hex'), '9999-12-31')
+			on conflict (id) do nothing`;
+		const official = async (title: string, category = 'general') => {
+			const r = await posts.createOfficialPost({ category, title, body: 'From Tapri.' });
+			if (!r.ok) throw new Error(r.error);
+			return r.id;
+		};
+		const old = await official('An old announcement');
+		await sql`update posts set published_on = now() - interval '15 days' where id = ${old}`;
+		const a = await official('Photos are here');
+		const b = await official('Markdown is here', 'feedback');
+		const c = await official('Follow threads');
+		expect((await feed.pinned()).map((i) => i.id)).toEqual([c, b]);
+		expect((await feed.pinned('feedback')).map((i) => i.id)).toEqual([b]);
+		await sql`update posts set status = 'removed' where id = ${c}`;
+		expect((await feed.pinned()).map((i) => i.id)).toEqual([b, a]);
+	});
+
+	it('leaves out pinned posts from the list below', async () => {
+		const x = await post('Stays in the list');
+		const y = await post('Pinned above instead');
+		expect((await feed.list({ tab: 'all', sort: 'new', exclude: [y] })).map((i) => i.id)).toEqual([x]);
 	});
 });
