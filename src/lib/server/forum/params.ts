@@ -2,6 +2,7 @@ import type { FeedSort, FeedTab } from './feed';
 
 export const TABS: { id: FeedTab; label: string }[] = [
 	{ id: 'all', label: 'Everything' },
+	{ id: 'following', label: 'Following' },
 	{ id: 'grievances', label: 'Grievances' },
 	{ id: 'conversations', label: 'Conversations' },
 	{ id: 'unanswered', label: 'Unanswered' }

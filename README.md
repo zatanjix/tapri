@@ -58,6 +58,7 @@ There are **no usernames or passwords**. Your account is a recovery key, like `K
 | **Fixed categories**: Academics, Hostel & Mess, Wellbeing, Harassment, Administration, Placements, General, Feedback | One place instead of dozens of scattered groups. Feedback about Tapri itself stays in the open, where others can add to it. |
 | **Grievances and conversations** | Grievances collect an **"Affects me too"** count. A problem 340 people have marked is hard to dismiss. Conversations (**"I feel this too"** in Wellbeing) are for questions, advice and support. |
 | **A new random name in every thread** | Consistent within a conversation, untraceable across them. The thread author is marked `OP`. |
+| **Follow threads** | Your own posts and threads you reply to are followed automatically. New replies are counted, not timed: Tapri never records when you read something. |
 | **One level of replies, sorted by most helpful** | Readable on phones; supportive answers rise first. |
 | **Upvotes and downvotes** | The community decides what rises. Repeating a vote takes it back. |
 | **Official posts carry a ✓ Official badge** | Announcements come from a separate **Tapri** identity that nobody can sign in as, so no one can impersonate the people running it, and official posts are never linked to anyone's own account. |
@@ -119,13 +120,14 @@ Browser ──HTTPS──▶ Vercel (SvelteKit on Node, TypeScript)
 | `POST /api/account/renew` | Fresh ticket → extends your account |
 | `POST` / `DELETE /api/session` | Sign in with a recovery key / sign out |
 | `GET /api/categories` | Categories |
-| `GET /api/feed?tab=&sort=&category=&page=` | Feed. Tabs: `all`, `conversations`, `grievances`, `unanswered`. Sorts: `hot` (most relevant, default), `new`, `old`, `top`, `affected` |
+| `GET /api/feed?tab=&sort=&category=&page=` | Feed. Tabs: `all`, `following`, `conversations`, `grievances`, `unanswered`. Sorts: `hot` (most relevant, default), `new`, `old`, `top`, `affected` |
 | `GET /api/feed/most-affected` | Most affected grievances this week |
 | `POST /api/search` | Full-text search over posts (`q`, optional `page`, optional `sort`: `relevance`, `new`, `old`). A POST so search words never appear in URLs or request logs. |
 | `POST /api/posts` | New post (`category`, `kind`, `title`, `body`) |
 | `GET` / `DELETE /api/posts/:id` | Thread with replies / delete your own post |
 | `POST /api/posts/:id/replies` | Reply (`body`, optional `parentId`) |
 | `POST /api/posts/:id/metoo` | Toggle "affects me too" |
+| `POST /api/posts/:id/follow` | Follow or unfollow a thread |
 | `POST /api/vote` | Upvote or downvote (`targetType`, `targetId`, `value`: 1 or -1). Repeating a vote takes it back. |
 | `DELETE /api/replies/:id` | Delete your own reply |
 | `POST /api/report` | Report a post or reply (`targetType`, `targetId`, `reason`, optional `note`) |

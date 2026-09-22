@@ -6,6 +6,6 @@ export async function load({ locals, url }) {
 	if (!locals.accountId) redirect(303, '/welcome');
 	const { tab, sort, page } = feedParams(url);
 	const app = await getApp();
-	const [items, mostAffected] = await Promise.all([app.feed.list({ tab, sort, page }), app.feed.mostAffected()]);
+	const [items, mostAffected] = await Promise.all([app.feed.list({ tab, sort, page, viewerId: locals.accountId }), app.feed.mostAffected()]);
 	return { items, mostAffected, tab, sort, page, tabs: TABS, sorts: SORTS };
 }

@@ -38,10 +38,15 @@ export class PostService {
 			where account_id = ${accountId} and published_on > now() - interval '1 hour'`;
 		if (n >= HOURLY_LIMITS.posts) return { ok: false, error: 'rate_limited' };
 
+		// Your own posts are followed from the start.
 		const [row] = await this.deps.sql`
-			insert into posts (category_id, account_id, kind, title, body)
-			select id, ${accountId}, ${input.kind}, ${title}, ${body} from categories where slug = ${input.category}
-			returning id`;
+			with p as (
+				insert into posts (category_id, account_id, kind, title, body)
+				select id, ${accountId}, ${input.kind}, ${title}, ${body} from categories where slug = ${input.category}
+				returning id, account_id
+			)
+			insert into follows (account_id, post_id) select account_id, id from p
+			returning post_id as id`;
 		return row ? { ok: true, id: Number(row.id) } : { ok: false, error: 'unknown_category' };
 	}
 
@@ -102,6 +107,11 @@ export class PostService {
 				insert into replies (post_id, parent_id, account_id, body)
 				values (${postId}, ${input.parentId ?? null}, ${accountId}, ${body}) returning id`;
 			await tx`update posts set reply_count = reply_count + 1 where id = ${postId}`;
+			// Replying follows the thread, with everything up to your own reply counted as seen.
+			await tx`
+				insert into follows (account_id, post_id, seen_replies)
+				select ${accountId}, id, reply_count from posts where id = ${postId}
+				on conflict (account_id, post_id) do update set seen_replies = excluded.seen_replies`;
 			return Number(row.id);
 		});
 		return { ok: true, id };
@@ -123,6 +133,10 @@ export class PostService {
 		const myVotes = new Map<string, -1 | 1>(votes.map((v) => [`${v.target_type}:${v.target_id}`, v.value]));
 		const myVote = (key: string): -1 | 0 | 1 => myVotes.get(key) ?? 0;
 		const [metooed] = await sql`select 1 from metoos where account_id = ${viewerId} and post_id = ${postId}`;
+		// Opening a followed thread marks its replies as seen.
+		const followed = await sql`
+			update follows set seen_replies = ${p.reply_count}
+			where account_id = ${viewerId} and post_id = ${postId} returning 1`;
 
 		const names = new ThreadHandles(handleKey, postId);
 		const post: PostView = {
@@ -140,6 +154,7 @@ export class PostService {
 			myVote: myVote(`post:${postId}`),
 			canDownvote: !NO_DOWNVOTES.includes(p.slug),
 			metooed: Boolean(metooed),
+			following: followed.length > 0,
 			mine: p.account_id === viewerId,
 			distress: showsDistress(`${p.title}\n${p.body}`),
 			official: p.official

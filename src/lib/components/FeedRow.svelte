@@ -19,6 +19,7 @@
 		<div class="st">
 			{#if showCount}<span class="count">{item.metoo} {countLabel}</span>{/if}
 			<span>{item.replyCount} {item.replyCount === 1 ? 'reply' : 'replies'}</span>
+			{#if item.newReplies}<span class="new">{item.newReplies} new</span>{/if}
 		</div>
 	</div>
 </article>
@@ -81,6 +82,10 @@
 		font-size: 12.5px;
 		color: var(--muted);
 		margin-top: 9px;
+	}
+	.new {
+		color: var(--ink);
+		font-weight: 800;
 	}
 	.count {
 		color: var(--count);

@@ -11,6 +11,7 @@ import {
 import { semesterId } from './crypto/semester';
 import { createSql, type Sql } from './db';
 import { FeedService } from './forum/feed';
+import { FollowService } from './forum/follows';
 import { PostService } from './forum/posts';
 import { ReactionService } from './forum/reactions';
 import { ReportService } from './forum/reports';
@@ -28,6 +29,7 @@ export interface App {
 	reactions: ReactionService;
 	reports: ReportService;
 	feed: FeedService;
+	follows: FollowService;
 	ipKeyer: IpKeyer;
 	/** Best-effort, per server instance. Durable limits live in the services. */
 	limits: { verifyStart: RateLimiter; verifyOtp: RateLimiter; signIn: RateLimiter; react: RateLimiter };
@@ -93,6 +95,7 @@ async function build(): Promise<App> {
 		reactions: new ReactionService(sql),
 		reports: new ReportService(sql),
 		feed: new FeedService({ sql, handleKey }),
+		follows: new FollowService(sql),
 		ipKeyer: new IpKeyer(),
 		limits: {
 			verifyStart: new RateLimiter(5, 60 * 60_000),

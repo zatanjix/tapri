@@ -30,6 +30,7 @@ export interface PostView {
 	myVote: -1 | 0 | 1;
 	canDownvote: boolean;
 	metooed: boolean;
+	following: boolean;
 	mine: boolean;
 	distress: boolean;
 	official: boolean;
@@ -69,6 +70,8 @@ export interface FeedItem {
 	upvotes: number;
 	metoo: number;
 	replyCount: number;
+	/** Only on the Following tab: replies since the viewer last opened the thread. */
+	newReplies?: number;
 	distress: boolean;
 	official: boolean;
 }

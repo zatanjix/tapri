@@ -16,9 +16,12 @@
 
 	let metoo = $state({ active: false, count: 0 });
 	let copied = $state(false);
+	let following = $state(false);
+	let followNote = $state('');
 
 	$effect.pre(() => {
 		metoo = { active: post.metooed, count: post.metoo };
+		following = post.following;
 	});
 
 	const metooLabel = $derived(
@@ -30,6 +33,12 @@
 		if (r.ok) metoo = r.data;
 	}
 
+
+	async function toggleFollow() {
+		const r = await api<{ active: boolean }>(`/api/posts/${post.id}/follow`, { method: 'POST' });
+		if (r.ok) following = r.data.active;
+		else if (r.error === 'too_many') followNote = "You're following as many threads as you can. Unfollow some first.";
+	}
 
 	async function copyLink() {
 		await navigator.clipboard.writeText(location.href);
@@ -65,9 +74,11 @@
 				{metooLabel} <span class="n">{metoo.count}</span>
 			</button>
 			<VoteControl targetType="post" targetId={post.id} upvotes={post.upvotes} downvotes={post.downvotes} myVote={post.myVote} canDownvote={post.canDownvote} />
+			<button class="sec" class:on={following} aria-pressed={following} onclick={toggleFollow}>{following ? 'Following' : 'Follow'}</button>
 			<button class="sec" onclick={copyLink}>{copied ? 'Copied' : 'Copy link'}</button>
 			{#if post.mine}<button class="ghost" onclick={remove}>Delete</button>{:else}<ReportButton targetType="post" targetId={post.id} />{/if}
 		</div>
+		{#if followNote}<p class="fnote">{followNote}</p>{/if}
 
 		<div class="note">
 			<HelpNote category={post.category.slug} distress={post.distress} />
@@ -181,6 +192,15 @@
 	}
 	.sec {
 		border: 1px solid var(--border);
+	}
+	.sec.on {
+		border-color: var(--ink);
+		box-shadow: inset 0 0 0 0.5px var(--ink);
+	}
+	.fnote {
+		font-size: 13px;
+		color: var(--muted);
+		margin: -6px 0 12px;
 	}
 	.ghost {
 		border: 0;

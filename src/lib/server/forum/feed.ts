@@ -4,7 +4,7 @@ import { baseHandle } from './handles';
 import { OFFICIAL_HANDLE } from './posts';
 import { LIMITS, type FeedItem } from './types';
 
-export type FeedTab = 'all' | 'conversations' | 'grievances' | 'unanswered';
+export type FeedTab = 'all' | 'conversations' | 'grievances' | 'unanswered' | 'following';
 export type FeedSort = 'hot' | 'new' | 'old' | 'top' | 'affected';
 export type SearchSort = 'relevance' | 'new' | 'old';
 
@@ -13,6 +13,8 @@ export interface FeedQuery {
 	sort: FeedSort;
 	category?: string;
 	page?: number;
+	/** Needed for the Following tab. */
+	viewerId?: string;
 }
 
 export const PAGE_SIZE = 20;
@@ -42,8 +44,11 @@ export class FeedService {
 	async list(q: FeedQuery): Promise<FeedItem[]> {
 		const { sql } = this.deps;
 		const page = Math.min(Math.max(1, Math.floor(q.page ?? 1)), MAX_PAGE);
+		const following = q.tab === 'following';
+		if (following && !q.viewerId) return [];
 		const tab = {
 			all: sql``,
+			following: sql``,
 			conversations: sql`and p.kind = 'conversation'`,
 			grievances: sql`and p.kind = 'grievance'`,
 			unanswered: sql`and p.reply_count = 0`
@@ -57,11 +62,18 @@ export class FeedService {
 			hot: sql`greatest(p.upvotes - p.downvotes + 2 * p.metoo + 1, 0)::float
 				/ power(extract(epoch from now() - p.published_on) / 3600 + 2, 1.5) desc, p.id desc`
 		}[q.sort];
+		const followJoin = following ? sql`join follows f on f.post_id = p.id and f.account_id = ${q.viewerId!}` : sql``;
+		const newReplies = following ? sql`, greatest(p.reply_count - f.seen_replies, 0)::int as new_replies` : sql``;
+		// In Following, "most relevant" means most recent activity: the latest reply, or the post itself.
+		const activity = sql`coalesce(
+			(select max(r.published_on) from replies r where r.post_id = p.id and r.status = 'published'),
+			p.published_on) desc, p.id desc`;
 
 		const rows = await sql`
-			select p.*, c.slug, c.name from posts p join categories c on c.id = p.category_id
+			select p.*, c.slug, c.name ${newReplies}
+			from posts p join categories c on c.id = p.category_id ${followJoin}
 			where p.status = 'published' ${tab} ${category}
-			order by ${order}
+			order by ${following && q.sort === 'hot' ? activity : order}
 			limit ${PAGE_SIZE} offset ${(page - 1) * PAGE_SIZE}`;
 		return rows.map((r) => this.item(r));
 	}
@@ -113,6 +125,7 @@ export class FeedService {
 			upvotes: r.upvotes,
 			metoo: r.metoo,
 			replyCount: r.reply_count,
+			...(r.new_replies === undefined ? {} : { newReplies: r.new_replies }),
 			distress: showsDistress(`${r.title}\n${r.body}`),
 			official: r.official
 		};

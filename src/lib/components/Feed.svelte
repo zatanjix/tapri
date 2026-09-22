@@ -35,7 +35,8 @@
 		all: 'Nothing here yet. Be the first to start something.',
 		grievances: 'No grievances yet. If something needs fixing, raise it.',
 		conversations: 'No conversations yet. Ask the question you would ask a senior you trust.',
-		unanswered: 'Every post has a reply. Nice.'
+		unanswered: 'Every post has a reply. Nice.',
+		following: "You're not following anything yet. Open a thread and tap Follow. Your own posts and threads you reply to are followed automatically."
 	};
 </script>
 
