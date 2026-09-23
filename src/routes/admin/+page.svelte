@@ -42,7 +42,7 @@
 
 			<h2 class="sec-h">Reply as Tapri</h2>
 			<form method="POST" action="?/officialReply">
-				<input name="postId" class="field" inputmode="numeric" placeholder="Post number (the #123 on the thread)" required />
+				<input name="thread" class="field" placeholder="Thread link (use Copy link on the thread)" required />
 				<textarea name="body" class="field" rows="3" placeholder="Reply" maxlength="5000" required></textarea>
 				{#if form?.replyError}<p class="error">Couldn't reply: {form.replyError}</p>{/if}
 				{#if form?.replied}<p class="ok">Replied. <a href="/p/{form.replied}">View thread</a></p>{/if}
@@ -67,7 +67,7 @@
 				{#if r.title}<h2>{r.title}</h2>{/if}
 				<p class="body">{r.body.slice(0, 600)}</p>
 				<div class="actions">
-					<a class="view" href="/p/{r.postId}" target="_blank" rel="noreferrer">Open thread</a>
+					<a class="view" href="/p/{r.postSlug}" target="_blank" rel="noreferrer">Open thread</a>
 					<form method="POST" action="?/dismiss">
 						<input type="hidden" name="targetType" value={r.targetType} />
 						<input type="hidden" name="targetId" value={r.targetId} />

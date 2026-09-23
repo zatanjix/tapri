@@ -29,6 +29,8 @@ export interface OpenReport {
 	title: string;
 	body: string;
 	postId: number;
+	/** The thread's address, for opening it from here. */
+	postSlug: string;
 	status: string;
 }
 
@@ -67,12 +69,14 @@ export class ReportService {
 			       coalesce(p.title, '') as title,
 			       coalesce(p.body, rep.body, '') as body,
 			       coalesce(p.id, rep.post_id) as post_id,
+			       coalesce(p.slug, rp.slug) as post_slug,
 			       coalesce(p.status, rep.status, 'gone') as status
 			from reports r
 			left join posts p on r.target_type = 'post' and p.id = r.target_id
 			left join replies rep on r.target_type = 'reply' and rep.id = r.target_id
+			left join posts rp on rp.id = rep.post_id
 			where r.handled = false
-			group by r.target_type, r.target_id, p.title, p.body, p.id, p.status, rep.body, rep.post_id, rep.status
+			group by r.target_type, r.target_id, p.title, p.body, p.id, p.slug, p.status, rep.body, rep.post_id, rep.status, rp.slug
 			order by max(r.reported_on) desc
 			limit 100`;
 		return rows.map((r) => ({
@@ -85,6 +89,7 @@ export class ReportService {
 			title: r.title,
 			body: r.body,
 			postId: Number(r.post_id),
+			postSlug: r.post_slug as string,
 			status: r.status
 		}));
 	}

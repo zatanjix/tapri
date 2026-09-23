@@ -3,6 +3,7 @@ import { dev } from '$app/environment';
 import { getApp } from '$lib/server/app';
 import { ADMIN_COOKIE, adminToken, passphraseMatches } from '$lib/server/gate';
 import type { TargetType } from '$lib/server/forum/reports';
+import { threadRef } from '$lib/server/forum/posts';
 
 /** The moderation view. Hidden entirely unless ADMIN_PASSPHRASE is configured. */
 function passphrase(): string {
@@ -56,21 +57,27 @@ export const actions = {
 	officialPost: async ({ request, cookies }) => {
 		if (!signedIn(cookies)) return fail(401, { wrong: true });
 		const form = await request.formData();
-		const result = await (await getApp()).posts.createOfficialPost({
+		const app = await getApp();
+		const result = await app.posts.createOfficialPost({
 			category: String(form.get('category') ?? ''),
 			title: String(form.get('title') ?? ''),
 			body: String(form.get('body') ?? '')
 		});
-		return result.ok ? { posted: result.id } : fail(400, { officialError: result.error });
+		if (!result.ok) return fail(400, { officialError: result.error });
+		return { posted: await app.posts.slugForId(result.id) };
 	},
 
 	officialReply: async ({ request, cookies }) => {
 		if (!signedIn(cookies)) return fail(401, { wrong: true });
 		const form = await request.formData();
-		const postId = Number(form.get('postId'));
-		if (!Number.isSafeInteger(postId) || postId < 1) return fail(400, { replyError: 'not_found' });
-		const result = await (await getApp()).posts.createOfficialReply(postId, { body: String(form.get('body') ?? '') });
-		return result.ok ? { replied: postId } : fail(400, { replyError: result.error });
+		const app = await getApp();
+		// Takes a thread's link (the "Copy link" button), its address, or an old post number.
+		const ref = threadRef(String(form.get('thread') ?? ''));
+		if (!ref) return fail(400, { replyError: 'not_found' });
+		const postId = 'id' in ref ? ref.id : await app.posts.idForSlug(ref.slug);
+		if (!postId) return fail(400, { replyError: 'not_found' });
+		const result = await app.posts.createOfficialReply(postId, { body: String(form.get('body') ?? '') });
+		return result.ok ? { replied: await app.posts.slugForId(postId) } : fail(400, { replyError: result.error });
 	},
 
 	dismiss: async ({ request, cookies }) => {

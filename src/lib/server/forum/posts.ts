@@ -39,6 +39,18 @@ const KINDS: readonly Kind[] = ['grievance', 'conversation'];
 export const newSlug = () => randomBytes(8).toString('hex');
 export const SLUG = /^[0-9a-f]{16}$/;
 
+/**
+ * What the admin page accepts in "Reply as Tapri": a thread's link, its address, or (for links
+ * shared before addresses existed) its old number.
+ */
+export function threadRef(input: string): { slug: string } | { id: number } | null {
+	const raw = input.trim().replace(/^#/, '');
+	const last = raw.split(/[?#]/)[0].replace(/\/+$/, '').split('/').pop()?.trim().toLowerCase() ?? '';
+	if (SLUG.test(last)) return { slug: last };
+	if (/^[1-9]\d{0,15}$/.test(last)) return { id: Number(last) };
+	return null;
+}
+
 export class PostService {
 	constructor(private deps: { sql: Sql; handleKey: Uint8Array; images?: ImageService | null }) {}
 
