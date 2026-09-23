@@ -14,7 +14,7 @@
 	<Avatar handle={item.handle} />
 	<div class="main">
 		<div class="who">{#if pinned}<span class="pin">Pinned</span>{/if}<b>{item.handle}</b>{#if item.official} <OfficialBadge />{/if} · {item.category.name} · {timeAgo(item.publishedOn)}</div>
-		<h3><a href="/p/{item.id}">{item.title}</a></h3>
+		<h3><a href="/p/{item.slug}">{item.title}</a></h3>
 		<p class="ex">{item.excerpt}</p>
 		<div class="st">
 			{#if showCount}<span class="count">{item.metoo} {countLabel}</span>{/if}

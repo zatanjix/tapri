@@ -105,10 +105,25 @@ describe('format migration on existing data', () => {
 describe('post images migration on existing data', () => {
 	it('adds an empty table and leaves posts untouched', async () => {
 		const [before] = await sql`select count(*)::int as n from posts`;
-		expect(await migrate(sql)).toContain('011_post_images.sql');
+		const stepDir = await mkdtemp(join(tmpdir(), 'tapri-mig11-'));
+		for (const f of (await readdir('migrations')).filter((f) => f < '012')) await cp(join('migrations', f), join(stepDir, f));
+		expect(await migrate(sql, stepDir)).toEqual(['011_post_images.sql']);
+		await rm(stepDir, { recursive: true, force: true });
 		const [after] = await sql`select count(*)::int as n from posts`;
 		expect(after).toEqual(before);
 		const [{ n }] = await sql`select count(*)::int as n from post_images`;
 		expect(n).toBe(0);
+	});
+});
+
+describe('slug migration on existing data', () => {
+	it('gives every existing post its own address, keeping titles and ids', async () => {
+		const before = await sql`select id, title from posts order by id`;
+		expect(before.length).toBeGreaterThan(1);
+		expect(await migrate(sql)).toContain('012_post_slugs.sql');
+		const after = await sql`select id, title, slug from posts order by id`;
+		expect(after.map((r) => ({ id: r.id, title: r.title }))).toEqual(before.map((r) => ({ id: r.id, title: r.title })));
+		expect(new Set(after.map((r) => r.slug)).size).toBe(after.length);
+		for (const r of after) expect(r.slug).toMatch(/^[0-9a-f]{16}$/);
 	});
 });

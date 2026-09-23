@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import type { Sql } from '../db';
 import { showsDistress } from '../../shared/distress';
 import { parseMarkdown } from '../../shared/markdown';
@@ -34,6 +35,10 @@ export const HOURLY_LIMITS = { posts: 5, replies: 30 } as const;
 
 const KINDS: readonly Kind[] = ['grievance', 'conversation'];
 
+/** A thread's public address: 64 random bits, so links reveal nothing about order or volume. */
+export const newSlug = () => randomBytes(8).toString('hex');
+export const SLUG = /^[0-9a-f]{16}$/;
+
 export class PostService {
 	constructor(private deps: { sql: Sql; handleKey: Uint8Array; images?: ImageService | null }) {}
 
@@ -68,8 +73,8 @@ export class PostService {
 		try {
 			const id = await sql.begin(async (tx) => {
 				const [row] = await tx`
-					insert into posts (category_id, account_id, kind, title, body, format)
-					values (${category.id}, ${accountId}, ${input.kind}, ${title}, ${body}, 'markdown') returning id`;
+					insert into posts (category_id, account_id, kind, title, body, format, slug)
+					values (${category.id}, ${accountId}, ${input.kind}, ${title}, ${body}, 'markdown', ${newSlug()}) returning id`;
 				// Your own posts are followed from the start.
 				await tx`insert into follows (account_id, post_id) values (${accountId}, ${row.id})`;
 				for (const [position, img] of stored.entries())
@@ -92,8 +97,8 @@ export class PostService {
 		if (title.length < LIMITS.titleMin || title.length > LIMITS.titleMax) return { ok: false, error: 'invalid_title' };
 		if (body.length === 0 || body.length > LIMITS.bodyMax) return { ok: false, error: 'invalid_body' };
 		const [row] = await this.deps.sql`
-			insert into posts (category_id, account_id, kind, title, body, official, format)
-			select id, ${SYSTEM_ACCOUNT_ID}, 'conversation', ${title}, ${body}, true, 'markdown' from categories where slug = ${input.category}
+			insert into posts (category_id, account_id, kind, title, body, official, format, slug)
+			select id, ${SYSTEM_ACCOUNT_ID}, 'conversation', ${title}, ${body}, true, 'markdown', ${newSlug()} from categories where slug = ${input.category}
 			returning id`;
 		return row ? { ok: true, id: Number(row.id) } : { ok: false, error: 'unknown_category' };
 	}
@@ -152,10 +157,23 @@ export class PostService {
 		return { ok: true, id };
 	}
 
+	/** The internal id behind a shared address, or null. */
+	async idForSlug(slug: string): Promise<number | null> {
+		if (!SLUG.test(slug)) return null;
+		const [row] = await this.deps.sql`select id from posts where slug = ${slug}`;
+		return row ? Number(row.id) : null;
+	}
+
+	/** The address of a thread known by its number, for redirecting old links. */
+	async slugForId(id: number): Promise<string | null> {
+		const [row] = await this.deps.sql`select slug from posts where id = ${id}`;
+		return row ? (row.slug as string) : null;
+	}
+
 	async getThread(viewerId: string, postId: number): Promise<ThreadView | null> {
 		const { sql, handleKey } = this.deps;
 		const [p] = await sql`
-			select p.*, c.slug, c.name from posts p join categories c on c.id = p.category_id
+			select p.*, c.slug as category_slug, c.name as category_name from posts p join categories c on c.id = p.category_id
 			where p.id = ${postId} and p.status = 'published'`;
 		if (!p) return null;
 
@@ -178,7 +196,8 @@ export class PostService {
 		const names = new ThreadHandles(handleKey, postId);
 		const post: PostView = {
 			id: Number(p.id),
-			category: { slug: p.slug, name: p.name },
+			slug: p.slug,
+			category: { slug: p.category_slug, name: p.category_name },
 			kind: p.kind,
 			title: p.title,
 			body: p.body,
@@ -191,7 +210,7 @@ export class PostService {
 			metoo: p.metoo,
 			replyCount: p.reply_count,
 			myVote: myVote(`post:${postId}`),
-			canDownvote: !NO_DOWNVOTES.includes(p.slug),
+			canDownvote: !NO_DOWNVOTES.includes(p.category_slug),
 			metooed: Boolean(metooed),
 			following: followed.length > 0,
 			mine: p.account_id === viewerId,

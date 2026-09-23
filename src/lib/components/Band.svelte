@@ -1,5 +1,12 @@
 <script lang="ts">
 	let { signedIn }: { signedIn: boolean } = $props();
+
+	/** Signing out is not undoable without the recovery key, so it always asks first. */
+	async function signOut() {
+		if (!confirm('Sign out?\n\nYou can only sign back in with your recovery key. Nobody can recover it for you.')) return;
+		await fetch('/api/session', { method: 'DELETE' });
+		location.href = '/welcome';
+	}
 </script>
 
 <header class="band">
@@ -8,6 +15,7 @@
 		<div class="right">
 			<a class="help" href="/help">Get help</a>
 			{#if signedIn}
+				<button type="button" class="out" onclick={signOut}>Sign out</button>
 				<a class="btn" href="/new"><span class="long">Create a post</span><span class="short">Post</span></a>
 			{:else}
 				<a class="btn" href="/join">Join</a>
@@ -50,8 +58,18 @@
 		text-decoration: none;
 		white-space: nowrap;
 	}
-	.help:hover {
+	.help:hover,
+	.out:hover {
 		text-decoration: underline;
+	}
+	.out {
+		background: none;
+		border: 0;
+		padding: 0;
+		color: inherit;
+		font-size: 13.5px;
+		font-weight: 700;
+		white-space: nowrap;
 	}
 	.btn {
 		background: #1a1a1a;

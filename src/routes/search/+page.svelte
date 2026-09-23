@@ -70,7 +70,7 @@
 			<Avatar handle={item.handle} />
 			<div class="main">
 				<div class="who"><b>{item.handle}</b>{#if item.official} <OfficialBadge />{/if} · {item.category.name} · {timeAgo(item.publishedOn)}</div>
-				<h3><a href="/p/{item.id}"><Marked text={item.titleMarked} /></a></h3>
+				<h3><a href="/p/{item.slug}"><Marked text={item.titleMarked} /></a></h3>
 				<p class="ex"><Marked text={item.excerptMarked} /></p>
 				<div class="st">
 					{#if item.kind === 'grievance' || item.metoo > 0}<span class="count-n">{item.metoo} {item.kind === 'grievance' ? 'affected' : 'feel this'}</span>{/if}

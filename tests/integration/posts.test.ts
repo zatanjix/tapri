@@ -163,3 +163,25 @@ describe('PostService formatting', () => {
 		expect((await posts.getThread(alice, id))?.replies[0].doc).toBeNull();
 	});
 });
+
+describe('thread addresses', () => {
+	it('gives every post its own random address, and keeps the category separate', async () => {
+		const a = await created();
+		const b = await created();
+		const thread = await posts.getThread(alice, a);
+		expect(thread?.post.slug).toMatch(/^[0-9a-f]{16}$/);
+		expect(thread?.post.category).toEqual({ slug: 'hostel-mess', name: 'Hostel & Mess' });
+		const other = await posts.getThread(alice, b);
+		expect(other?.post.slug).not.toBe(thread?.post.slug);
+	});
+
+	it('looks a thread up by its address, and back again for old links', async () => {
+		const id = await created();
+		const { slug } = (await posts.getThread(alice, id))!.post;
+		expect(await posts.idForSlug(slug)).toBe(id);
+		expect(await posts.slugForId(id)).toBe(slug);
+		expect(await posts.idForSlug('nope')).toBeNull();
+		expect(await posts.idForSlug('0'.repeat(16))).toBeNull();
+		expect(await posts.slugForId(999_999)).toBeNull();
+	});
+});

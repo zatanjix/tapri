@@ -26,7 +26,7 @@
 			<section class="box">
 				<h2>Most affected this week</h2>
 				{#each data.mostAffected as item (item.id)}
-					<a class="rank" href="/p/{item.id}"><b>{item.metoo}</b><span>{item.title}</span></a>
+					<a class="rank" href="/p/{item.slug}"><b>{item.metoo}</b><span>{item.title}</span></a>
 				{/each}
 			</section>
 		{/if}

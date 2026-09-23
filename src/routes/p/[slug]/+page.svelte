@@ -62,7 +62,7 @@
 
 <div class="wrap layout">
 	<article class="col">
-		<div class="crumb"><a href="/c/{post.category.slug}">{post.category.name}</a> / <span class="mono">#{post.id}</span></div>
+		<div class="crumb"><a href="/c/{post.category.slug}">{post.category.name}</a></div>
 		<div class="who">
 			<Avatar handle={post.handle} />
 			<span><b>{post.handle}</b>{#if post.official} <OfficialBadge />{/if}{#if post.mine} <span class="you">you</span>{/if} · {timeAgo(post.publishedOn)}</span>

@@ -137,4 +137,12 @@ describe('FeedService sort orders', () => {
 		const y = await post('Pinned above instead');
 		expect((await feed.list({ tab: 'all', sort: 'new', exclude: [y] })).map((i) => i.id)).toEqual([x]);
 	});
+
+	it('carries each post\u2019s address, with the category separate', async () => {
+		const id = await post('A post with an address');
+		const [item] = await feed.list({ tab: 'all', sort: 'new' });
+		expect(item.id).toBe(id);
+		expect(item.slug).toMatch(/^[0-9a-f]{16}$/);
+		expect(item.category.slug).toBe('academics');
+	});
 });

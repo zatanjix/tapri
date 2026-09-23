@@ -82,7 +82,7 @@ export class FeedService {
 			p.published_on) desc, p.id desc`;
 
 		const rows = await sql`
-			select p.*, c.slug, c.name ${newReplies}, ${this.imageCount()}
+			select p.*, c.slug as category_slug, c.name as category_name ${newReplies}, ${this.imageCount()}
 			from posts p join categories c on c.id = p.category_id ${followJoin}
 			where p.status = 'published' ${tab} ${category} ${exclude}
 			order by ${following && q.sort === 'hot' ? activity : order}
@@ -99,7 +99,7 @@ export class FeedService {
 		const marks = `StartSel=${HIT_START}, StopSel=${HIT_END}`;
 		const rows = await sql`
 			with query as (select websearch_to_tsquery('english', ${q}) as tsq)
-			select p.*, c.slug, c.name, ${this.imageCount()},
+			select p.*, c.slug as category_slug, c.name as category_name, ${this.imageCount()},
 			       ts_headline('english', p.title, query.tsq, ${`${marks}, HighlightAll=true`}) as title_marked,
 			       ts_headline('english', p.body, query.tsq, ${`${marks}, MaxWords=30, MinWords=12, MaxFragments=2, FragmentDelimiter=" … "`}) as excerpt_marked
 			from posts p join categories c on c.id = p.category_id, query
@@ -119,7 +119,7 @@ export class FeedService {
 	async pinned(category?: string): Promise<FeedItem[]> {
 		const { sql } = this.deps;
 		const rows = await sql`
-			select p.*, c.slug, c.name, ${this.imageCount()}
+			select p.*, c.slug as category_slug, c.name as category_name, ${this.imageCount()}
 			from posts p join categories c on c.id = p.category_id
 			where p.status = 'published' and p.official
 			  and p.published_on > now() - make_interval(days => ${PINNED_DAYS})
@@ -130,7 +130,7 @@ export class FeedService {
 
 	async mostAffected(days = 7, limit = 5): Promise<FeedItem[]> {
 		const rows = await this.deps.sql`
-			select p.*, c.slug, c.name from posts p join categories c on c.id = p.category_id
+			select p.*, c.slug as category_slug, c.name as category_name from posts p join categories c on c.id = p.category_id
 			where p.status = 'published' and p.kind = 'grievance' and p.metoo > 0
 			  and p.published_on > now() - make_interval(days => ${days})
 			order by p.metoo desc, p.id desc limit ${limit}`;
@@ -141,7 +141,8 @@ export class FeedService {
 	private item(r: Record<string, any>): FeedItem {
 		return {
 			id: Number(r.id),
-			category: { slug: r.slug, name: r.name },
+			slug: r.slug,
+			category: { slug: r.category_slug, name: r.category_name },
 			kind: r.kind,
 			title: r.title,
 			excerpt: excerpt(r.format === 'markdown' ? toPlainText(r.body) : r.body),

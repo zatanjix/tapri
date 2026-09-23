@@ -21,10 +21,6 @@
 		if (!data.signedIn && page.url.pathname !== '/join' && loadTicket()) goto('/join');
 	});
 
-	async function signOut() {
-		await fetch('/api/session', { method: 'DELETE' });
-		location.href = '/welcome';
-	}
 </script>
 
 <svelte:head>
@@ -43,7 +39,6 @@
 		<a href="/help">Get help</a>
 		<a href="/rules">House rules</a>
 		{#if data.sourceUrl}<a href={data.sourceUrl} rel="noreferrer noopener">Source code</a>{/if}
-		{#if data.signedIn}<button type="button" onclick={signOut}>Sign out</button>{/if}
 		<span class="theme"><ThemeSwitch /></span>
 	</p>
 </footer>
@@ -71,13 +66,5 @@
 	}
 	.theme {
 		margin-left: auto;
-	}
-	.links button {
-		background: none;
-		border: 0;
-		padding: 0;
-		color: inherit;
-		text-decoration: underline;
-		font-size: inherit;
 	}
 </style>

@@ -26,6 +26,8 @@ export interface CategoryRef {
 /** Views never contain account ids. Handles are the only identity shown. */
 export interface PostView {
 	id: number;
+	/** The address a thread is shared under: /p/<slug>. */
+	slug: string;
 	category: CategoryRef;
 	kind: Kind;
 	title: string;
@@ -74,6 +76,7 @@ export interface ThreadView {
 
 export interface FeedItem {
 	id: number;
+	slug: string;
 	category: CategoryRef;
 	kind: Kind;
 	title: string;
